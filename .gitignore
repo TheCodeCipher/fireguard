@@ -1,0 +1,86 @@
+
+# ==========================
+# PYTHON
+# ==========================
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# ==========================
+# SECRETS
+# ==========================
+.env
+.env.*
+!.env.example
+
+# ==========================
+# PYTHON TESTING
+# ==========================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ==========================
+# IDE
+# ==========================
+.vscode/
+.idea/
+
+# ==========================
+# JAVASCRIPT
+# ==========================
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ==========================
+# DATASETS
+# ==========================
+data/raw/
+data/interim/
+data/processed/
+data/external/
+datasets/
+
+*.h5
+*.hdf5
+*.tif
+*.tiff
+*.nc
+*.grib
+*.grb
+
+# ==========================
+# MODEL ARTIFACTS
+# ==========================
+artifacts/
+outputs/
+checkpoints/
+runs/
+mlruns/
+
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# ==========================
+# LOGS
+# ==========================
+*.log
+logs/
+
+# ==========================
+# OPERATING SYSTEM
+# ==========================
+.DS_Store
+Thumbs.db
