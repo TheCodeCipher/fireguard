@@ -1,0 +1,14 @@
+diff --git a/src/dataloader/FireSpreadDataset.py b/src/dataloader/FireSpreadDataset.py
+index a742228..432db40 100644
+--- a/src/dataloader/FireSpreadDataset.py
++++ b/src/dataloader/FireSpreadDataset.py
+@@ -14,7 +14,8 @@ import h5py
+ from datetime import datetime
+ 
+ 
+-class FireSpreadDataset(Dataset):
++from torch.utils.data.dataset import T_co
++class FireSpreadDataset(Dataset[T_co]):
+     def __init__(self, data_dir: str, included_fire_years: List[int], n_leading_observations: int,
+                  crop_side_length: int, load_from_hdf5: bool, is_train: bool, remove_duplicate_features: bool,
+                  stats_years: List[int], n_leading_observations_test_adjustment: Optional[int] = None, 
