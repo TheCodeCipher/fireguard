@@ -107,6 +107,25 @@ channels and appends a binary active-fire channel.
 | 38 | Active fire |
 | 39 | Active fire (binary) |
 
+## 4.1 Temporal and spatial feature groups
+
+The baseline feature mapping distinguishes the following broad groups:
+
+| Group | Processed indices | Features |
+|---|---:|---|
+| VIIRS reflectance | 0–2 | M11, I2, I1 |
+| Vegetation indices | 3–4 | NDVI, EVI2 |
+| Weather observations | 5–11 | Precipitation, wind, temperature, ERC, humidity |
+| Topography | 12–14 | Slope, aspect, elevation |
+| Drought | 15 | PDSI |
+| Land cover | 16–32 | 17 one-hot classes |
+| Forecast weather | 33–37 | Forecast precipitation, wind, temperature, humidity |
+| Active fire | 38–39 | Detection time and binary detection mask |
+
+This grouping is based on the baseline feature mapping. It does not
+establish the native temporal resolution or update frequency of every
+source product.
+
 ## 5. Sample raster metadata
 
 Measured from event `fire_21458798`, 2018-01-06 and
@@ -210,6 +229,44 @@ must not be treated as equivalent.
 
 Do not apply a universal NaN-to-zero rule to all source channels.
 Source-specific validity handling must be determined.
+## 8.1 Training and evaluation preprocessing
+
+The baseline uses different spatial preprocessing depending on the
+`is_train` setting.
+
+- Training mode performs random square cropping.
+- Ten candidate crops are evaluated.
+- Crop selection strongly favors target crops containing active-fire
+  pixels, with a smaller preference for crops containing input fire.
+- Horizontal and vertical flips and rotations by multiples of 90
+  degrees are applied.
+- Angular features are adjusted during geometric transformations.
+- Evaluation mode applies a center crop whose height and width are
+  multiples of 32.
+
+Consequently, training crops are not a representative sample of
+natural fire prevalence. Evaluation crops preserve the full-frame
+class distribution only within the center-cropped region.
+
+## 8.2 Standardization and missing values
+
+Input features are standardized using predefined means and standard
+deviations selected through `stats_years`.
+
+The baseline replaces remaining input NaNs with zero after
+standardization. In this context, zero corresponds to the standardized
+feature mean, rather than a physical measurement of zero.
+
+The active-fire input channel is handled separately: NaNs are first
+replaced with zero, and detection times encoded as HHMM are converted
+to hours. A binary active-fire mask is computed before standardization
+and appended as an additional input channel.
+
+The HDF5 conversion generator also applies the active-fire NaN and
+HHMM preprocessing before writing the converted data.
+
+These are baseline implementation choices. They should not be
+interpreted as universal source-product nodata conventions.
 
 ## 9. Angular-feature limitation
 
