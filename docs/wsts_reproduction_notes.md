@@ -13,9 +13,17 @@
 - Download completed successfully.
 - Published MD5 checksum was verified against the downloaded archive.
 - Archive extraction completed.
-- Extracted file count reported by Colab: 14,218.
-- Extracted years: 2018, 2019, 2020, 2021.
+- Verified archive TIFF count: 13,607.
+- Verified extracted TIFF count: 13,607.
+- Missing extracted TIFFs: 0.
+- Unexpected extracted TIFFs: 0.
+- Extracted years: 2018, 2019, 2020 and 2021.
 - Raw data is stored in Google Drive and is not committed to Git.
+
+An earlier inventory reported 14,218 files. This count could not
+be reconciled with the archive. The verified archive and extracted
+path comparison establishes 13,607 TIFF files as the authoritative
+count for this reproduction record.
 
 ## 3. Storage observations
 
@@ -85,13 +93,18 @@ f62dc49f2c2a6d249c071533ae5340c0d01bfb95
 - Loader target dtype: torch.int64
 - Verified target positive pixels for the inspected pair: 10
 
-## 9. Outstanding items
+## 9. Remaining Phase 1 coordination and verification
 
-- Complete all 23 source channel definitions and metadata.
-- Build docs/data_dictionary.md.
-- Build sample-level and event-level metadata manifests.
-- Coordinate event footprints and grid conventions with Role 4.
-- Provide event metadata for Role 6's HLS feasibility audit if requested.
+- Review the 23-channel data dictionary against the dataset creation source.
+- Complete the temporal leakage and operational availability audit.
+  Unknown values remain explicitly marked in docs/leakage_audit.csv.
+- Coordinate event footprints, projected coordinates and grid conventions
+  with Role 4.
+- Provide event metadata, event years and AOI information to Role 6
+  for the HLS historical coverage feasibility audit.
+- Confirm whether daily raster grids remain consistent within each event.
+- Treat the sample manifest as one verified loader sample, not a
+  dataset-wide sample validation.
 
 
 ## Archive and Extraction Integrity Verification
