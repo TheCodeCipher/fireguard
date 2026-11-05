@@ -61,7 +61,7 @@ No HDF5 conversion duration, output size or conversion errors are claimed.
 The pinned baseline was locally modified in:
 src/dataloader/FireSpreadDataset.py
 
-The compatibility patch replaces the deprecated T_co import with a TypeVar definition.
+The compatibility patch replaces the unavailable T_co import in the current PyTorch environment with a TypeVar definition.
 The patch is recorded separately in:
 docs/wsts_baseline_local_patch.diff
 
