@@ -268,6 +268,39 @@ HHMM preprocessing before writing the converted data.
 These are baseline implementation choices. They should not be
 interpreted as universal source-product nodata conventions.
 
+## 8.3 Event-wide active-fire audit: `fire_21458798` (2018)
+
+An event-wide audit was completed for all 14 daily GeoTIFFs from 2018-01-01 through 2018-01-14. The raw active-fire band (1-based band 23; zero-based index 22) was read directly from each TIFF.
+
+| Audit measure | Result |
+|---|---:|
+| Daily TIFFs audited | 14 |
+| Pixels per TIFF | 75,088 |
+| Total pixel observations | 1,051,232 |
+| NaN pixels | 1,051,154 |
+| Infinite pixels | 0 |
+| Finite pixels | 78 |
+| Positive detection pixels | 78 |
+| Finite zero pixels | 0 |
+| Dates with positive detections | 5 |
+| Distinct positive HHMM values across the event | 8 |
+
+Positive detections occurred on:
+
+| Date | Positive pixels | Distinct raw HHMM values |
+|---|---:|---|
+| 2018-01-01 | 4 | 854 |
+| 2018-01-07 | 10 | 2006 |
+| 2018-01-10 | 4 | 2048 |
+| 2018-01-11 | 34 | 912, 2030 |
+| 2018-01-12 | 26 | 848, 1030, 2012 |
+
+The raw positive values are acquisition times encoded as HHMM. For example, 854 represents 08:54. The baseline loader replaces active-fire NaNs with zero, converts HHMM values to integer hours using floor division by 100, and binarizes the target with `y > 0`. It also derives and appends a binary active-fire input mask from the processed input active-fire channel.
+
+The 78 positive pixels are daily rasterized detection-pixel observations across the event. They must not be interpreted as 78 unique fires or ignitions. The eight distinct HHMM values are distinct time values, not eight separate fire events.
+
+These statistics are specific to this inspected event. They are not dataset-wide rates or universal properties of every WSTS event. The audit CSV is `data/manifests/wsts_2018_fire_21458798_active_fire_audit.csv`.
+
 ## 9. Angular-feature limitation
 
 The pinned baseline applies sine to angular features but not cosine.
@@ -304,3 +337,68 @@ documentation and further raster inspection.
 The local compatibility patch replaces the unavailable `T_co`
 import with a `TypeVar` definition. It is a local modification and
 is not part of the upstream pinned commit.
+
+
+### Active-fire detection channel
+
+**Raw channel:** 22 (23rd TIFF band)  
+**Processed channel:** 38  
+**Additional binary channel:** 39  
+**Source:** VIIRS active-fire FeatureCollection  
+**Raw representation:** Acquisition time encoded as HHMM integer; NaN values are present where no finite detection value is rasterized.
+
+The dataset-generation pipeline converts the VIIRS acquisition-time attribute to an integer and rasterizes it into the active-fire band.
+
+The baseline loader converts acquisition time from HHMM to integer hours using floor division by 100. It also creates a binary active-fire mask using values greater than zero.
+
+The resulting processed representation contains:
+- Channel 38: active-fire acquisition-hour feature.
+- Channel 39: binary active-fire detection mask.
+
+The prediction target is generated from the final observation's active-fire band using a positive-value test.
+
+### Active-fire detection channel
+
+**Raw channel:** 22 (23rd TIFF band)  
+**Processed channel:** 38  
+**Additional binary channel:** 39  
+**Source:** VIIRS active-fire FeatureCollection  
+**Raw representation:** Acquisition time encoded as HHMM integer; NaN values are present where no finite detection value is rasterized.
+
+The dataset-generation pipeline converts the VIIRS acquisition-time attribute to an integer and rasterizes it into the active-fire band.
+
+The baseline loader converts acquisition time from HHMM to integer hours using floor division by 100. It also creates a binary active-fire mask using values greater than zero.
+
+The resulting processed representation contains:
+- Channel 38: active-fire acquisition-hour feature.
+- Channel 39: binary active-fire detection mask.
+
+The prediction target is generated from the final observation's active-fire band using a positive-value test.
+
+**Sample inspection:**
+For event `2018/fire_21458798`, first TIFF:
+- Total pixels: 75,088.
+- NaN pixels: 75,084 (99.9947%).
+- Finite pixels: 4.
+- Positive pixels: 4.
+- Unique finite value: 854.
+- Infinite pixels: 0.
+
+The value 854 is consistent with acquisition time 08:54 and is converted to hour 8 by the baseline loader.
+
+These statistics describe one TIFF only and must not be generalized to the complete WSTS dataset. NaN should not automatically be interpreted as sensor failure; its meaning depends on the active-fire rasterization and loader conventions.
+
+### Active-fire channel: missing-value and target semantics
+
+The active-fire channel (raw band index 22; 1-based band 23) stores VIIRS active-fire acquisition times in HHMM format. In the inspected event `fire_21458798` (2018-01-01 to 2018-01-14), NaN values represent pixels with no active-fire detection, rather than missing observations.
+
+An event-wide audit of all 14 daily GeoTIFFs found:
+- 75,088 pixels per TIFF.
+- 1,051,154 NaN pixels across all 14 TIFFs.
+- 78 finite positive detection pixels across the event's daily rasters.
+- 5 dates with at least one positive detection.
+- No finite zero-valued pixels in the audited active-fire bands.
+
+The baseline loader replaces active-fire NaNs with zero, converts HHMM values to integer hours using floor division by 100, and binarizes the target using `y > 0`. It also appends a binary active-fire input mask derived from the processed active-fire input channel.
+
+The 78 positive pixels are daily rasterized detection pixels, not necessarily 78 unique fires or ignitions. These statistics describe the inspected event only and should not be generalized to the full dataset without a broader audit.
