@@ -402,3 +402,46 @@ An event-wide audit of all 14 daily GeoTIFFs found:
 The baseline loader replaces active-fire NaNs with zero, converts HHMM values to integer hours using floor division by 100, and binarizes the target using `y > 0`. It also appends a binary active-fire input mask derived from the processed active-fire input channel.
 
 The 78 positive pixels are daily rasterized detection pixels, not necessarily 78 unique fires or ignitions. These statistics describe the inspected event only and should not be generalized to the full dataset without a broader audit.
+
+### All-pair temporal missing-mask comparison: fire_22863125 (2019)
+
+A temporal missing-mask comparison was performed for NDVI and EVI2 across all 19 daily TIFF files from 2019-05-18 to 2019-06-05.
+
+All unique date pairs were compared independently for each band, producing 171 comparisons per band and 342 comparisons in total.
+
+| Metric | NDVI | EVI2 |
+|---|---:|---:|
+| Date-pair comparisons | 171 | 171 |
+| Identical mask pairs | 55 | 55 |
+| Mean IoU | 0.981271 | 0.981271 |
+| Minimum IoU | 0.966616 | 0.966616 |
+| Maximum IoU | 1.000000 | 1.000000 |
+
+NDVI and EVI2 produced identical temporal comparison statistics. This is consistent with the daily audit, which found identical missing-pixel masks between these two bands on every date.
+
+The high mean IoU indicates strong temporal spatial consistency in missing-data patterns for this event. However, the 116 non-identical date pairs demonstrate that the masks are not completely invariant over time.
+
+These results describe one event and do not establish the cause of missingness or imply that the same pattern occurs across the full WSTS dataset.
+
+The all-pair comparison results are stored in `wsts_2019_fire_22863125_all_pair_temporal_iou_ndvi_evi2.csv`.
+### All-pair temporal missing-mask comparison: fire_22863125 (2019)
+
+A temporal missing-mask comparison was performed for NDVI and EVI2 across all 19 daily TIFF files from 2019-05-18 to 2019-06-05.
+
+All unique date pairs were compared independently for each band, producing 171 comparisons per band and 342 comparisons in total.
+
+| Metric | NDVI | EVI2 |
+|---|---:|---:|
+| Date-pair comparisons | 171 | 171 |
+| Identical mask pairs | 55 | 55 |
+| Mean IoU | 0.981271 | 0.981271 |
+| Minimum IoU | 0.966616 | 0.966616 |
+| Maximum IoU | 1.000000 | 1.000000 |
+
+NDVI and EVI2 produced identical temporal comparison statistics. This is consistent with the daily audit, which found identical missing-pixel masks between these two bands on every date.
+
+The high mean IoU indicates strong temporal spatial consistency in missing-data patterns for this event. However, the 116 non-identical date pairs demonstrate that the masks are not completely invariant over time.
+
+These results describe one event and do not establish the cause of missingness or imply that the same pattern occurs across the full WSTS dataset.
+
+The all-pair comparison results are stored in `wsts_2019_fire_22863125_all_pair_temporal_iou_ndvi_evi2.csv` in the external data manifests directory.
