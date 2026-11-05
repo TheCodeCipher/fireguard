@@ -12,20 +12,23 @@
 - Extracted files reported: 14,218
 - Event directories observed: 607
 
-## 2. Data organization
+## 2. Dataset download and extraction
 
-The extracted dataset is organized by year and fire event:
+- Archive: WildfireSpreadTS.zip
+- Download completed successfully.
+- Published MD5 checksum was verified against the downloaded archive.
+- Archive extraction completed.
+- Verified archive TIFF count: 13,607.
+- Verified extracted TIFF count: 13,607.
+- Missing extracted TIFFs: 0.
+- Unexpected extracted TIFFs: 0.
+- Extracted years: 2018, 2019, 2020 and 2021.
+- Raw data is stored in Google Drive and is not committed to Git.
 
-    extracted/
-      2018/
-        fire_<event_id>/
-          YYYY-MM-DD.tif
-      2019/
-      2020/
-      2021/
-
-The inspected event was `fire_21458798` in 2018 and contained
-14 daily TIFF files from 2018-01-01 through 2018-01-14.
+An earlier inventory reported 14,218 files. This count could not
+be reconciled with the archive. The verified archive and extracted
+path comparison establishes 13,607 TIFF files as the authoritative
+count for this reproduction record.
 
 ## 3. Original GeoTIFF schema: 23 bands
 
@@ -310,21 +313,18 @@ information.
 
 This limitation is documented, not silently modified here.
 
-## 10. Metadata still requiring confirmation
+### 10. Remaining Phase 1 coordination and verification
 
-The following details are not fully established for every channel:
-
-- Exact source product/version for each feature.
-- Physical units for each feature.
-- Authoritative valid-value ranges.
-- Source-specific nodata conventions.
-- Native resolution before resampling.
-- Whether all events share a common grid and CRS.
-- Temporal meaning and forecast initialization for forecast channels.
-
-Do not infer these values from a single sample's min/max.
-Obtain them from the dataset paper, creation code, source-product
-documentation and further raster inspection.
+- Review the 23-channel data dictionary against the dataset creation source.
+- Complete the temporal leakage and operational availability audit.
+  Unknown values remain explicitly marked in docs/leakage_audit.csv.
+- Coordinate event footprints, projected coordinates and grid conventions
+  with Role 4.
+- Provide event metadata, event years and AOI information to Role 6
+  for the HLS historical coverage feasibility audit.
+- Confirm whether daily raster grids remain consistent within each event.
+- Treat the sample manifest as one verified loader sample, not a
+  dataset-wide sample validation.
 
 ## 11. Reproducibility
 
