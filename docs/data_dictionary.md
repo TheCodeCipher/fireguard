@@ -445,3 +445,38 @@ The high mean IoU indicates strong temporal spatial consistency in missing-data 
 These results describe one event and do not establish the cause of missingness or imply that the same pattern occurs across the full WSTS dataset.
 
 The all-pair comparison results are stored in `wsts_2019_fire_22863125_all_pair_temporal_iou_ndvi_evi2.csv` in the external data manifests directory.
+### Cross-event missingness comparison: 2019 and 2021
+
+A descriptive cross-event missingness comparison was conducted using two WSTS events:
+
+- 2019: `fire_22863125` — 19 daily TIFF files.
+- 2021: `fire_25017306` — 22 daily TIFF files.
+
+Five common bands were examined: VIIRS_M11, VIIRS_I2, VIIRS_I1, NDVI and EVI2. The analysis produced 205 daily band records across 41 TIFF files.
+
+**Mean daily missingness percentage**
+
+| Band | 2019 event | 2021 event |
+|---|---:|---:|
+| VIIRS_M11 | 0.0000% | 25.1793% |
+| VIIRS_I2 | 0.0000% | 25.1793% |
+| VIIRS_I1 | 0.0000% | 25.1793% |
+| NDVI | 10.2562% | 27.2727% |
+| EVI2 | 10.2562% | 27.2727% |
+
+Within each event, the three VIIRS reflectance bands had identical missingness masks on every date. NDVI and EVI2 also had identical missingness masks on every date.
+
+| Event | Dates | Identical reflectance masks | Identical NDVI/EVI2 masks |
+|---|---:|---:|---:|
+| 2019 | 19 | 19 | 19 |
+| 2021 | 22 | 22 | 22 |
+
+The comparison indicates substantial differences in missingness between the two selected events. The 2019 event exhibited relatively stable missingness, whereas the 2021 event showed pronounced temporal variation.
+
+These findings are descriptive and event-specific. They do not establish the cause of missingness or characterize the entire WSTS dataset.
+
+**Generated outputs** (stored outside Git in the external manifests directory):
+
+- `wsts_cross_event_missingness_2019_2021.csv`
+- `wsts_cross_event_missingness_summary_2019_2021.csv`
+- `wsts_cross_event_mask_relationships_2019_2021.csv`
