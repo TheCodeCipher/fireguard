@@ -92,3 +92,28 @@ f62dc49f2c2a6d249c071533ae5340c0d01bfb95
 - Build sample-level and event-level metadata manifests.
 - Coordinate event footprints and grid conventions with Role 4.
 - Provide event metadata for Role 6's HLS feasibility audit if requested.
+
+
+## Archive and Extraction Integrity Verification
+
+The original `WildfireSpreadTS.zip` archive was compared against
+the extracted dataset directory.
+
+- Archive TIFF count: 13,607
+- Extracted TIFF count: 13,607
+- Missing extracted TIFFs: 0
+- TIFFs not present in archive: 0
+- Unique archive paths: 13,607
+- Unique extracted paths: 13,607
+
+Path-level comparison was performed after normalizing paths
+to their year-level dataset structure.
+
+All four years (2018–2021) had zero missing TIFF files.
+
+An earlier inventory recorded 14,218 files. This count could not
+be reconciled with the original archive. The archive-level and
+path-level verification establishes 13,607 TIFF files as the
+verified count.
+
+No additional extraction or download was required.
