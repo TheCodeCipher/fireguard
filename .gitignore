@@ -84,3 +84,18 @@ logs/
 # ==========================
 .DS_Store
 Thumbs.db
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Python test and tooling artifacts
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
