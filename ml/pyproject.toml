@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fireguard-ml"
+version = "0.1.0"
+description = "Machine-learning research package for the FireGuard wildfire intelligence platform"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.2",
+    "numpy>=1.26",
+    "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+# Needed by scripts/ (raster audits and the real-sample smoke test), not by the unit tests.
+scripts = [
+    "rasterio>=1.3",
+    "matplotlib>=3.8",
+    "pyproj>=3.6",
+    "pyyaml>=6.0",
+]
+dev = [
+    "pytest>=8.3,<10",
+    "pytest-cov>=6.0,<8.0",
+    "ruff>=0.9,<1.0",
+    "pyyaml>=6.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+# Tests live inside the package so that `pip install -e ml` makes them importable from anywhere
+# and so that no second top-level `tests` package collides with backend/tests.
+testpaths = ["src/fireguard_ml/tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.ruff]
+# matches backend/pyproject.toml so both packages lint identically
+target-version = "py313"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
