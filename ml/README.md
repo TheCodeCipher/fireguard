@@ -29,7 +29,7 @@ From the repository root:
     pip install -e "ml[dev]"
     cd ml && pytest
 
-Expected: 28 passed. `ruff check src` must also be clean; `.github/workflows/ml-ci.yml` runs both.
+Expected: 31 passed. `ruff check src` must also be clean; `.github/workflows/ml-ci.yml` runs both.
 
 Add `scripts` to the extras (`pip install -e "ml[dev,scripts]"`) to run anything in the repository's
 `scripts/` folder, which additionally needs rasterio and matplotlib.
