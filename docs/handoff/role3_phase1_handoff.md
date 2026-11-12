@@ -31,7 +31,7 @@
 | Brief says | What I did | Why |
 |---|---|---|
 | "Inspect the raw HDF5 channel arrays" | Audited the released GeoTIFFs (13,607 files, 1,363 sampled) | The HDF5 is a conversion of these same rasters, so the values are the same and the GeoTIFFs carry the band order the creation code writes. Flag it if the team wants the HDF5 path checked separately. |
-| "Work from actual channel indices/names supplied by Role 1" | Used `docs/wsts_data_dictionary.md` and cross-checked against the export order in `FirePred.py` lines 125-131 | Role 1 had not issued a channel manifest when this ran. The two sources agree, but this is an unconfirmed dependency: Role 1 should confirm the indices in section 2 of the audit. |
+| "Work from actual channel indices/names supplied by Role 1" | Used `docs/wsts_data_dictionary.md` and cross-checked against the export order in `FirePred.py` lines 125-131 | The two sources agree, and Role 1 confirmed the GFS indices against the data dictionary on 2026-11-13 (no differences). |
 | Commit `outputs/gfs_wind_direction_histogram.png` and `outputs/gfs_channel_range_summary.csv` | Committed copies under `docs/evidence/` | The repository's `.gitignore` excludes `outputs/`. The guide and the `.gitignore` contradict each other; this resolves it without changing either. |
 | "representative unique/sample values" | Covered by the percentile table plus the histogram reading in audit section 8.2 (the distribution is folded, not clipped) | A unique-value listing is not meaningful for a continuous float channel; the clipped-versus-folded question is what that check exists to answer. |
 
@@ -59,7 +59,7 @@
 ## 4. Interface hand-offs
 - Sent to: Role 4 (leakage register owner); copy to Role 1 (channel identity) and Role 2 (temporal contract)
 - Artifact/schema: `docs/gfs_channel_audit.md` (start at section 8.1, the status register), `outputs/gfs_channel_range_summary.csv`, `outputs/gfs_wind_direction_histogram.png`, `docs/gfs_branch_gating.md`, `docs/temporal_input_contract.md`
-- Confirmed by receiver: (pending)
+- Confirmed by receiver: Role 1, 2026-11-13. GFS channel identity confirmed (raw 17-21 / bands 18-22 / processed 33-37), exclusions and branch restrictions to be recorded in the manifest. Ownership agreed: Role 1 = channel extraction and ordering; Role 3 = GFS semantics and audit evidence; Role 4 = leakage register. Role 4: (pending)
 
 Message for Role 4:
 

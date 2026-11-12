@@ -6,8 +6,8 @@
 - Files sampled: 1363 of 13607 TIFFs (every 10th per year, years: 2018, 2019, 2020, 2021).
 - Files skipped: 0.
 - Pixels used for percentiles/histogram: random sample of up to 5000 finite pixels per file per channel. Min, max, mean and NaN counts are exact over all sampled files.
-- Schema: `docs/wsts_data_dictionary.md` (pinned baseline commit f62dc49). Creation code: SebastianGer/WildfireSpreadTSCreateDataset (`FirePred.py`).
-- **`docs/wsts_data_dictionary.md` is not in this repository.** It is Role 1's artifact and is cited here for the channel schema. Every schema fact this audit relies on was also checked against the export order in `FirePred.py` lines 125-131, so the conclusions do not rest on it alone, but the reference will not resolve until Role 1 commits it. Role 1 should confirm the indices in section 2.
+- Schema: `docs/wsts_data_dictionary.md` (Role 1's artifact, pinned baseline commit f62dc49). Creation code: SebastianGer/WildfireSpreadTSCreateDataset (`FirePred.py`).
+- Every schema fact this audit relies on was also checked against the export order in `FirePred.py` lines 125-131, so the conclusions do not rest on the data dictionary alone. **Role 1 confirmed on 2026-11-13** that all five GFS channels match the data dictionary (raw 17-21, GeoTIFF bands 18-22, processed 33-37; no index or ordering differences), and that the manifest will mark processed 33-37 excluded from strict M1-M4.
 
 ## 2. Channel identity
 | Channel | Original index (0-based) | GeoTIFF band (1-based) | Loader processed index |
