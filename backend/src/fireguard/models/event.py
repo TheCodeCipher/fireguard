@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from fireguard.models.forecast import ForecastRun
 from datetime import date
 
 from sqlalchemy import Date, Integer, String
@@ -26,7 +30,7 @@ class WildfireEvent(Base):
     p2_fold_id: Mapped[str | None] = mapped_column(String(50))
     manifest_sha256: Mapped[str | None] = mapped_column(String(64))
 
-    forecast_runs: Mapped[list["ForecastRun"]] = relationship(
+    forecast_runs: Mapped[list[ForecastRun]] = relationship(
         back_populates="event",
         cascade="all, delete-orphan",
     )

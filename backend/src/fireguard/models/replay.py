@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from fireguard.models.forecast import ForecastRun
 from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, Float, ForeignKey, String
@@ -20,7 +24,7 @@ class ReplayMetric(Base):
     threshold: Mapped[float | None] = mapped_column(Float)
     aggregation: Mapped[str] = mapped_column(String(30), default="event", nullable=False)
     calibrator_id: Mapped[str | None] = mapped_column(String(100))
-    forecast_run: Mapped["ForecastRun"] = relationship(back_populates="metrics")
+    forecast_run: Mapped[ForecastRun] = relationship(back_populates="metrics")
 
 
 class ReplaySession(Base):
@@ -38,4 +42,4 @@ class ReplaySession(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
-    forecast_run: Mapped["ForecastRun"] = relationship(back_populates="replay_sessions")
+    forecast_run: Mapped[ForecastRun] = relationship(back_populates="replay_sessions")

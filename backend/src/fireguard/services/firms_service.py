@@ -16,7 +16,6 @@ from fireguard.schemas.firms import (
 from fireguard.services.cache import AsyncTTLCache, CacheResult
 from fireguard.services.firms_client import FIRMSClient, FIRMSUpstreamError
 
-
 OBSERVATION_CACHE: AsyncTTLCache[list[FireObservation]] = AsyncTTLCache()
 AVAILABILITY_CACHE: AsyncTTLCache[tuple[date, date]] = AsyncTTLCache()
 

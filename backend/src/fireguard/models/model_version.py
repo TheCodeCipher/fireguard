@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import DateTime, JSON, String
+if TYPE_CHECKING:
+    from fireguard.models.forecast import ForecastRun
+from datetime import UTC, datetime
+
+from sqlalchemy import JSON, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from fireguard.core.database import Base
@@ -23,4 +26,4 @@ class ModelVersion(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
-    forecast_runs: Mapped[list["ForecastRun"]] = relationship(back_populates="model_version")
+    forecast_runs: Mapped[list[ForecastRun]] = relationship(back_populates="model_version")

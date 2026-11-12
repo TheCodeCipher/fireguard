@@ -14,12 +14,12 @@ from fireguard.schemas.firms import (
     CacheMetadata,
     FireConfidence,
     FireObservation,
+    FiresResponse,
     FIRMSAvailabilityResponse,
     FIRMSSource,
-    FiresResponse,
     MockFireObservationsResponse,
 )
-from fireguard.services.firms_service import FIRMSGateway, SOURCE_LABELS, cache_expiry
+from fireguard.services.firms_service import SOURCE_LABELS, FIRMSGateway, cache_expiry
 
 router = APIRouter(tags=["FIRMS"])
 

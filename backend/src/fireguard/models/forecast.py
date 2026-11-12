@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Date,
     DateTime,
     ForeignKey,
     Integer,
-    JSON,
     String,
     UniqueConstraint,
 )
@@ -17,6 +17,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from fireguard.core.database import Base
 
+if TYPE_CHECKING:
+    from fireguard.models.event import WildfireEvent
+    from fireguard.models.model_version import ModelVersion
+    from fireguard.models.replay import ReplayMetric, ReplaySession
 
 class ForecastRun(Base):
     """A precomputed run. Only explicitly marked OOF held-out runs are replayable."""
@@ -50,15 +54,15 @@ class ForecastRun(Base):
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
 
-    event: Mapped["WildfireEvent"] = relationship(back_populates="forecast_runs")
-    model_version: Mapped["ModelVersion"] = relationship(back_populates="forecast_runs")
-    artifacts: Mapped[list["ForecastArtifact"]] = relationship(
+    event: Mapped[WildfireEvent] = relationship(back_populates="forecast_runs")
+    model_version: Mapped[ModelVersion] = relationship(back_populates="forecast_runs")
+    artifacts: Mapped[list[ForecastArtifact]] = relationship(
         back_populates="forecast_run", cascade="all, delete-orphan"
     )
-    metrics: Mapped[list["ReplayMetric"]] = relationship(
+    metrics: Mapped[list[ReplayMetric]] = relationship(
         back_populates="forecast_run", cascade="all, delete-orphan"
     )
-    replay_sessions: Mapped[list["ReplaySession"]] = relationship(
+    replay_sessions: Mapped[list[ReplaySession]] = relationship(
         back_populates="forecast_run", cascade="all, delete-orphan"
     )
 
@@ -79,4 +83,4 @@ class ForecastArtifact(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
-    forecast_run: Mapped["ForecastRun"] = relationship(back_populates="artifacts")
+    forecast_run: Mapped[ForecastRun] = relationship(back_populates="artifacts")

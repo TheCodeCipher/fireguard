@@ -4,7 +4,7 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class FIRMSSource(str, Enum):
+class FIRMSSource(str, Enum): # noqa: UP042
     VIIRS_SNPP_NRT = "VIIRS_SNPP_NRT"
     VIIRS_SNPP_SP = "VIIRS_SNPP_SP"
     VIIRS_NOAA20_NRT = "VIIRS_NOAA20_NRT"
@@ -13,7 +13,7 @@ class FIRMSSource(str, Enum):
     VIIRS_NOAA21_SP = "VIIRS_NOAA21_SP"
 
 
-class FireConfidence(str, Enum):
+class FireConfidence(str, Enum): # noqa: UP042
     low = "low"
     nominal = "nominal"
     high = "high"

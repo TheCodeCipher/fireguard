@@ -1,15 +1,70 @@
-# Python generated files
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Python testing and tooling
 .pytest_cache/
-.ruff_cache/
 .mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# JavaScript
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Datasets
+data/raw/
+data/interim/
+data/processed/
+data/external/
+datasets/
+*.h5
+*.hdf5
+*.tif
+*.tiff
+*.nc
+*.grib
+*.grb
+
+# Model artifacts and generated replay files
+artifacts/
+outputs/
+checkpoints/
+runs/
+mlruns/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Logs
+*.log
+logs/
 
 # Local development databases
 *.db
 *.sqlite
 *.sqlite3
 
-# Locally generated replay artifacts
-/backend/artifacts/
+# Operating system
+.DS_Store
+Thumbs.db
