@@ -49,15 +49,43 @@ def dated_tifs(event_dir: Path):
     return sorted(out)
 
 
-def pick_event(root: Path, n_needed: int):
-    """First event (sorted) that has n_needed consecutive daily files; returns that run."""
-    for event_dir in sorted(p for p in root.glob("20??/*") if p.is_dir()):
-        files = dated_tifs(event_dir)
-        for i in range(len(files) - n_needed + 1):
-            run = files[i : i + n_needed]
-            if all((run[k + 1][0] - run[k][0]).days == 1 for k in range(n_needed - 1)):
-                return event_dir, run
-    return None, None
+def target_positive_count(path: Path) -> int:
+    """Number of active-fire pixels in the last band of one daily raster."""
+    with rasterio.open(path) as src:
+        if src.count != EXPECTED_BANDS:
+            return -1
+        band = src.read(EXPECTED_BANDS).astype(np.float32)
+    return int((np.nan_to_num(band, nan=0.0) > 0).sum())
+
+
+def consecutive_windows(event_dir: Path, n_needed: int):
+    files = dated_tifs(event_dir)
+    for i in range(len(files) - n_needed + 1):
+        run = files[i : i + n_needed]
+        if all((run[k + 1][0] - run[k][0]).days == 1 for k in range(n_needed - 1)):
+            yield run
+
+
+def pick_event(root: Path, n_needed: int, max_events: int):
+    """Prefer a window whose target day actually contains fire.
+
+    Each event is padded with quiet days before ignition, so the first valid window usually has an
+    all-negative target. That is fine for a shape test but weak as evidence, because it never shows
+    the fire target decoding working. Fall back to the first valid window if no fire is found.
+    """
+    first = (None, None)
+    for n, event_dir in enumerate(sorted(p for p in root.glob("20??/*") if p.is_dir())):
+        if n >= max_events:
+            break
+        for run in consecutive_windows(event_dir, n_needed):
+            if first[1] is None:
+                first = (event_dir, run)
+            if target_positive_count(run[-1][1]) > 0:
+                return event_dir, run, "window chosen because its target day contains fire"
+    return first[0], first[1], (
+        f"no window with a non-empty target found in the first {max_events} events; "
+        "using the first valid window, so the target is all-negative"
+    )
 
 
 def main():
@@ -67,6 +95,8 @@ def main():
     ap.add_argument("--T", type=int, default=5, help="number of input days")
     ap.add_argument("--base", type=int, default=8, help="model width; small by default so this runs on CPU")
     ap.add_argument("--depth", type=int, default=5)
+    ap.add_argument("--max-events", type=int, default=40,
+                    help="how many events to scan for a window whose target day contains fire")
     ap.add_argument("--out-root", default=str(Path(__file__).resolve().parents[1]))
     args = ap.parse_args()
 
@@ -77,8 +107,9 @@ def main():
         run = files[:n_needed] if len(files) >= n_needed else None
         if run and not all((run[k + 1][0] - run[k][0]).days == 1 for k in range(n_needed - 1)):
             sys.exit(f"{event_dir}: first {n_needed} files are not consecutive days")
+        why = "window chosen by --event-dir"
     else:
-        event_dir, run = pick_event(Path(args.data_root), n_needed)
+        event_dir, run, why = pick_event(Path(args.data_root), n_needed, args.max_events)
     if not run:
         sys.exit(f"No event with {n_needed} consecutive daily .tif files found")
 
@@ -110,7 +141,9 @@ def main():
         "padded_hw": [hp, wp],
         "input_tensor": list(x_pad.shape),
         "channels_per_frame": c,
+        "target_positive_pixels": int(y.sum()),
         "target_positive_fraction": float(y.mean()),
+        "window_selection": why,
         "models": {},
     }
     torch.manual_seed(0)
