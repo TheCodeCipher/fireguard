@@ -1,7 +1,8 @@
 """Checkpoint save/load that always carries what the offline OOF export needs (Role 3).
 
-A checkpoint is self-describing: it rebuilds the model from its own spec, so exporting predictions never
-depends on someone remembering the constructor arguments, channel order or fold.
+A checkpoint is self-describing: it rebuilds the model from its own spec, so exporting
+predictions never depends on someone remembering the constructor arguments, channel order
+or fold.
 """
 from __future__ import annotations
 
@@ -11,11 +12,13 @@ import torch
 
 from .temporal_unet import MODEL_REGISTRY, _TemporalBase
 
-REQUIRED_META = ("channels", "T", "preprocessing_version", "config_hash", "fold", "split_manifest_hash")
+REQUIRED_META = ("channels", "T", "preprocessing_version", "config_hash", "fold",
+                 "split_manifest_hash")
 
 
-# The dataset-creation code names these bands "forecast ..." (FirePred.py), the data dictionary calls them
-# "gfs_...". Block both spellings so a rename cannot slip a forecast channel into a strict model.
+# The dataset-creation code names these bands "forecast ..." (FirePred.py); the data
+# dictionary calls them "gfs_...". Block both spellings so a rename cannot slip a forecast
+# channel into a strict model.
 FORBIDDEN_STRICT_SUBSTRINGS = ("gfs", "forecast")
 
 
@@ -25,26 +28,41 @@ def assert_strict_channels(channels) -> None:
         raise ValueError(f"GFS / forecast channels are not allowed in strict models: {bad}")
 
 
-def save_checkpoint(model: _TemporalBase, path: str | Path, meta: dict[str, object], strict: bool = True) -> None:
+def save_checkpoint(model: _TemporalBase, path: str | Path, meta: dict[str, object],
+                    strict: bool = True) -> None:
     missing = [k for k in REQUIRED_META if k not in meta]
     if missing:
         raise ValueError(f"checkpoint meta is missing: {missing}")
     if len(meta["channels"]) != model.c_strict:
-        raise ValueError(f"meta has {len(meta['channels'])} channels but model expects {model.c_strict}")
+        raise ValueError(
+            f"meta has {len(meta['channels'])} channels but model expects {model.c_strict}")
     if int(meta["T"]) != model.T:
         raise ValueError(f"meta T={meta['T']} but model T={model.T}")
     if strict:
         assert_strict_channels(meta["channels"])
-    payload = {"spec": model.spec(), "meta": dict(meta), "strict": strict, "state_dict": model.state_dict()}
+    payload = {"spec": model.spec(), "meta": dict(meta), "strict": strict,
+               "state_dict": model.state_dict()}
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     torch.save(payload, path)
 
 
-def load_checkpoint(path: str | Path, map_location: str = "cpu") -> tuple[_TemporalBase, dict[str, object]]:
+def load_checkpoint(path: str | Path,
+                    map_location: str = "cpu") -> tuple[_TemporalBase, dict[str, object]]:
+    """Rebuild a model from its own spec.
+
+    `model.strict_checkpoint` records whether the file was written as a strict (no-forecast-channel)
+    model. Read it before putting predictions into a strict results table: a benchmark-assumption
+    model loads exactly like a strict one and is otherwise indistinguishable.
+    """
     payload = torch.load(path, map_location=map_location, weights_only=True)
     spec = dict(payload["spec"])
     cls = MODEL_REGISTRY[spec.pop("model_type")]
     model = cls(**spec)
     model.load_state_dict(payload["state_dict"])
     model.eval()
-    return model, payload["meta"]
+    meta = payload["meta"]
+    strict = bool(payload["strict"])
+    if strict:
+        assert_strict_channels(meta["channels"])  # the file may have been written by an older guard
+    model.strict_checkpoint = strict
+    return model, meta

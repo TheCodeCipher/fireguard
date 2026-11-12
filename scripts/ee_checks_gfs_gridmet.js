@@ -48,9 +48,10 @@ function precipSeries(day) {
              .filter(ee.Filter.rangeContains('forecast_hours', 1, 12))
              .sort('forecast_hours');
   var region = ee.Geometry.Rectangle([-125, 32, -104, 49]);  // western US
+  // map() over an ImageCollection must return an Image, so attach the mean as a property
   return c.map(function (img) {
     var m = img.select('total_precipitation_surface').reduceRegion(ee.Reducer.mean(), region, 27830);
-    return ee.Feature(null, {h: img.get('forecast_hours'), mean_mm: m.get('total_precipitation_surface')});
+    return img.set('mean_mm', m.get('total_precipitation_surface'));
   }).aggregate_array('mean_mm');
 }
 print('CHECK 4  mean precip by forecast hour 1..12, run 2019-02-14 00Z (sum-rule period):', precipSeries('2019-02-14'));

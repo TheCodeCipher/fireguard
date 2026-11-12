@@ -1,15 +1,17 @@
 """M3 (stacked-days U-Net) and M4 (shared encoder + ConvLSTM U-Net) for FireGuard (Role 3).
 
 Shared contract (docs/temporal_input_contract.md)
-    input  x : [B, T, C, H_pad, W_pad]   C = number of STRICT (no-GFS) channels, frames oldest -> newest
+    input  x : [B, T, C, H_pad, W_pad]   C = STRICT (no-GFS) channel count,
+                                         frames oldest -> newest
     output   : [B, 1, H_pad, W_pad] logits (one per cell)
     H_pad and W_pad must be multiples of 2**depth (default depth=5 -> 32).
 
 Loss, valid-mask handling and metrics are NOT in here (Roles 2 and 4). `predict()` is the offline
 inference path: sigmoid, optional crop of the bottom/right padding. Backend never calls it.
 
-Design decision to agree with Role 2: M4 takes skip connections from the LAST frame (day D) and applies
-the ConvLSTM at the bottleneck. M3 and M4 use the same encoder/decoder blocks for a fair comparison.
+Design decision to agree with Role 2: M4 takes skip connections from the LAST frame (day D)
+and applies the ConvLSTM at the bottleneck. M3 and M4 use the same encoder/decoder blocks
+for a fair comparison.
 """
 from __future__ import annotations
 
@@ -27,8 +29,10 @@ def _norm(ch: int) -> nn.GroupNorm:
 class ConvBlock(nn.Sequential):
     def __init__(self, in_ch: int, out_ch: int):
         super().__init__(
-            nn.Conv2d(in_ch, out_ch, 3, padding=1, bias=False), _norm(out_ch), nn.ReLU(inplace=True),
-            nn.Conv2d(out_ch, out_ch, 3, padding=1, bias=False), _norm(out_ch), nn.ReLU(inplace=True),
+            nn.Conv2d(in_ch, out_ch, 3, padding=1, bias=False), _norm(out_ch),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_ch, out_ch, 3, padding=1, bias=False), _norm(out_ch),
+            nn.ReLU(inplace=True),
         )
 
 
@@ -56,13 +60,16 @@ class Decoder(nn.Module):
     def __init__(self, base: int, depth: int):
         super().__init__()
         ch = level_channels(base, depth)
-        self.ups = nn.ModuleList(nn.ConvTranspose2d(ch[i], ch[i - 1], 2, stride=2) for i in range(depth, 0, -1))
-        self.blocks = nn.ModuleList(ConvBlock(2 * ch[i - 1], ch[i - 1]) for i in range(depth, 0, -1))
+        self.ups = nn.ModuleList(
+            nn.ConvTranspose2d(ch[i], ch[i - 1], 2, stride=2) for i in range(depth, 0, -1))
+        self.blocks = nn.ModuleList(
+            ConvBlock(2 * ch[i - 1], ch[i - 1]) for i in range(depth, 0, -1))
         self.head = nn.Conv2d(ch[0], 1, 1)
 
     def forward(self, bottleneck: torch.Tensor, skips: list[torch.Tensor]) -> torch.Tensor:
+        """skips holds exactly `depth` encoder maps, shallowest first; bottleneck is separate."""
         x = bottleneck
-        for up, blk, skip in zip(self.ups, self.blocks, reversed(skips[:-1]), strict=True):
+        for up, blk, skip in zip(self.ups, self.blocks, reversed(skips), strict=True):
             x = blk(torch.cat([up(x), skip], dim=1))
         return self.head(x)
 
@@ -77,7 +84,8 @@ class _TemporalBase(nn.Module):
         self.c_strict, self.T, self.base, self.depth = c_strict, T, base, depth
 
     def spec(self) -> dict[str, object]:
-        return dict(model_type=self.model_type, c_strict=self.c_strict, T=self.T, base=self.base, depth=self.depth)
+        return dict(model_type=self.model_type, c_strict=self.c_strict, T=self.T,
+                    base=self.base, depth=self.depth)
 
     def _check(self, x: torch.Tensor) -> None:
         if x.ndim != 5:
@@ -91,7 +99,7 @@ class _TemporalBase(nn.Module):
 
     @torch.no_grad()
     def predict(self, x: torch.Tensor, orig_hw: tuple[int, int] | None = None) -> torch.Tensor:
-        """Offline inference: probabilities [B, 1, H, W]. Crops bottom/right padding if orig_hw is given."""
+        """Offline inference: probabilities [B, 1, H, W]. Crops padding if orig_hw is given."""
         was_training = self.training
         self.eval()
         try:
@@ -117,20 +125,29 @@ class StackedDaysUNet(_TemporalBase):
         self._check(x)
         b, t, c, h, w = x.shape
         feats = self.enc(x.reshape(b, t * c, h, w))
-        return self.dec(feats[-1], feats)
+        return self.dec(feats[-1], feats[:-1])
 
 
 class ConvLSTMUNet(_TemporalBase):
-    """M4: shared per-frame encoder -> ConvLSTM over time at the bottleneck -> decoder (skips from last frame)."""
+    """M4: shared per-frame encoder -> ConvLSTM at the bottleneck -> decoder.
+
+    Skip connections come from the last frame only.
+    """
 
     model_type = "m4_convlstm_unet"
 
-    def __init__(self, c_strict: int, T: int = 5, base: int = 32, depth: int = 5, lstm_kernel: int = 3):
+    def __init__(self, c_strict: int, T: int = 5, base: int = 32, depth: int = 5,
+                 lstm_kernel: int = 3):
         super().__init__(c_strict, T, base, depth)
+        self.lstm_kernel = lstm_kernel
         self.enc = Encoder(c_strict, base, depth)
         bott = self.enc.ch[-1]
         self.temporal = ConvLSTM(bott, bott, kernel_size=lstm_kernel)
         self.dec = Decoder(base, depth)
+
+    def spec(self) -> dict[str, object]:
+        # lstm_kernel sets the ConvLSTM weight shapes; without it a checkpoint cannot be rebuilt
+        return {**super().spec(), "lstm_kernel": self.lstm_kernel}
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         self._check(x)
@@ -139,7 +156,10 @@ class ConvLSTMUNet(_TemporalBase):
         bott = feats[-1].reshape(b, t, *feats[-1].shape[1:])
         _, (h_last, _) = self.temporal(bott)
         last_skips = [f.reshape(b, t, *f.shape[1:])[:, -1] for f in feats[:-1]]
-        return self.dec(h_last, last_skips + [h_last])
+        return self.dec(h_last, last_skips)
 
 
-MODEL_REGISTRY = {StackedDaysUNet.model_type: StackedDaysUNet, ConvLSTMUNet.model_type: ConvLSTMUNet}
+MODEL_REGISTRY = {
+    StackedDaysUNet.model_type: StackedDaysUNet,
+    ConvLSTMUNet.model_type: ConvLSTMUNet,
+}

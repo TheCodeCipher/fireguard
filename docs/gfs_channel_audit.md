@@ -7,6 +7,7 @@
 - Files skipped: 0.
 - Pixels used for percentiles/histogram: random sample of up to 5000 finite pixels per file per channel. Min, max, mean and NaN counts are exact over all sampled files.
 - Schema: `docs/wsts_data_dictionary.md` (pinned baseline commit f62dc49). Creation code: SebastianGer/WildfireSpreadTSCreateDataset (`FirePred.py`).
+- **`docs/wsts_data_dictionary.md` is not in this repository.** It is Role 1's artifact and is cited here for the channel schema. Every schema fact this audit relies on was also checked against the export order in `FirePred.py` lines 125-131, so the conclusions do not rest on it alone, but the reference will not resolve until Role 1 commits it. Role 1 should confirm the indices in section 2.
 
 ## 2. Channel identity
 | Channel | Original index (0-based) | GeoTIFF band (1-based) | Loader processed index |
@@ -30,7 +31,7 @@
 | gfs_temperature | -12.36 | -1.782 | 19.5 | 32.05 | 39.38 | 18.51 | 0.0000 |
 | gfs_specific_humidity | 0.001143 | 0.001924 | 0.005279 | 0.01052 | 0.01371 | 0.005426 | 0.0000 |
 
-Full table (including per-year rows): `outputs/gfs_channel_range_summary.csv`. Histogram: `outputs/gfs_wind_direction_histogram.png`. `outputs/` is git-ignored, so the committed copies of this evidence live in `docs/evidence/`.
+Full table (including per-year rows): `outputs/gfs_channel_range_summary.csv`. Histogram: `outputs/gfs_wind_direction_histogram.png`. `outputs/` is git-ignored (`.gitignore` line 66), so the committed copies of this evidence live in `docs/evidence/`. Note for the maintainer: the execution guide lists these two files under `outputs/` as Phase 1 artifacts to commit, which the repository's own `.gitignore` forbids. The copies under `docs/evidence/` resolve that; say so if the guide should be amended.
 
 ## 4. Direction classification
 - **GFS wind direction (band 20): `QUADRANT_LIMITED`**. all values within about [-90, 90] (min -90.00, max 90.00).
@@ -112,6 +113,7 @@ Sources read on 2026-11-11: `FirePred.py` in SebastianGer/WildfireSpreadTSCreate
 - Earth Engine's documentation for `ee.Number.atan2` says the left input is x and the right input is y; `ee.Image.atan2` is described as the angle of the vector [x, y] with image1 as the left operand. Read that way, `v.atan2(u)` is the angle of the point (x = v, y = u): a compass bearing, clockwise from north, of the direction the wind blows toward, covering the full circle.
 - The data does not look like that. The range is exactly [-90, 90], and the axis test in section 5 fits the `90 - th` / `270 - th` family (median 32.3) and not the `th` / `th + 180` family (44.5, which is what unrelated angles give).
 - Both facts are what `arctan(v / u)` in degrees would produce: an angle counter-clockwise from east with the sign of u thrown away. A wind blowing toward the north-east and one blowing toward the south-west get the same value.
+- **Folded, not clipped.** The histogram (`docs/evidence/gfs_wind_direction_histogram.png`) distinguishes the two possibilities. It tapers smoothly toward both ends and the bins at -90 and +90 are the smallest in the plot. A channel that had been clipped, with out-of-range values clamped to the limits, would pile up into tall spikes at exactly those two values. The values were therefore folded by the arithmetic that produced them, not clamped afterwards, which is what `arctan(v / u)` gives: an angle of exactly +/-90 arises only as u approaches zero, which is rare. This also covers the "representative values" part of the Phase 1 brief; no separate value listing is needed.
 - So the released rasters and the published code disagree. Possible reasons: the rasters were built with a different version of the code, or `ee.Image.atan2` behaved differently from its documentation. **Cause: UNKNOWN.** EE checks 3a and 3b in `scripts/ee_checks_gfs_gridmet.js` test the second possibility. Neither outcome changes the classification, because u and v are not in the files and the lost half cannot be recovered.
 - Reading the 360-degree column of section 5: `270 - th` scores 42.6 only because GRIDMET `th` lies between 180 and 360 for about 74% of pixels (sector shares 0.439 + 0.304). For those winds u is positive and `arctan(v / u)` happens to equal the full angle. The folded channel gives the same numbers whether `th` means FROM or TOWARD, so this column cannot settle the GRIDMET convention either.
 
@@ -156,7 +158,7 @@ Consequence. The released channel cannot be made comparable across folds by resc
 
 - Code (lines 49-56): `filterDate(<D>T00:00, <D>T23:59)` on IDAHO_EPSCOR/GRIDMET, then the median, which is expected to be a single image.
 - Range: 0 to 360 with every 90-degree sector populated (sections 3 and 4). NaN fraction 1.07%, identical for wind speed and direction, so it is a property of the GRIDMET grid coverage and not of one band. Where those pixels are has not been mapped.
-- Convention: meteorological data normally reports the direction the wind comes from, clockwise from north, and a 74% share between 180 and 360 degrees matches the westerly winds of the region under that reading. This is ASSUMED until the band description on the catalogue page is recorded.
+- Convention: meteorological data normally reports the direction the wind comes from, clockwise from north, and a 74% share between 180 and 360 degrees matches the westerly winds of the region under that reading. The histogram peaks near 250 degrees, which under the FROM reading is wind arriving from the west-southwest, the prevailing pattern for the western United States; under the TOWARD reading the same peak would mean wind arriving from the east-northeast, which is not. That supports the FROM reading without proving it, so the status stays ASSUMED until the band description on the catalogue page is recorded.
 - Day window: the filter picks the GRIDMET image whose start time falls inside UTC day D. GRIDMET is a daily product for the United States and its "day" need not be the UTC day, so the selected image may summarise hours after 00:00Z on D+1. EE check 5 prints its start and end time. Level A for all GRIDMET channels is UNKNOWN until then; Level B (publication delay) is UNKNOWN.
 - Related: the drought index (lines 93-96) is selected with `datetime.timestamp(today)` on a datetime without time zone, so the result depended on the clock setting of the machine that built the dataset. This can move the 5-day PDSI selection by one image at the boundaries.
 

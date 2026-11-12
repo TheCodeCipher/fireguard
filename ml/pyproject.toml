@@ -39,8 +39,9 @@ pythonpath = ["src"]
 addopts = "-ra"
 
 [tool.ruff]
+# matches backend/pyproject.toml so both packages lint identically
 target-version = "py313"
-line-length = 120
+line-length = 100
 src = ["src"]
 
 [tool.ruff.lint]

@@ -3,15 +3,15 @@
 - Member name: Arkodyuti Bhattacharyya
 - Assigned role: Role 3, Temporal / Weather / GNN Engineer
 - Phase completed: Phase 1 (READY FOR REVIEW, not yet PASSED; see section 6)
-- Branch: `role3/gfs-audit` (see section 5: this does not match the naming rule in CONTRIBUTING.md)
-- Date: 2026-11-12
+- Branch: `role3/ml/temporal-models`
+- Date: 2026-11-12 (final)
 - Branch / PR links: (fill in)
 
 ## 1. Tasks completed
 | Task ID | Description | Status | Evidence/artifact |
 |---|---|---|---|
 | P1-R3-01 | Inspect GFS raw ranges and direction encoding | Done | `scripts/audit_gfs_channels.py`; `docs/gfs_channel_audit.md` sections 1-5; `outputs/gfs_channel_range_summary.csv`; `outputs/gfs_wind_direction_histogram.png` |
-| P1-R3-02 | Trace GFS issue/valid time and GRIDMET timing evidence | Code trace done; Earth Engine metadata checks not yet run | `docs/gfs_channel_audit.md` sections 6-8; `scripts/ee_checks_gfs_gridmet.js` |
+| P1-R3-02 | Trace GFS issue/valid time and GRIDMET timing evidence | Code trace done; Earth Engine metadata checks scripted but not yet run, so the affected items stay UNKNOWN | `docs/gfs_channel_audit.md` sections 6-8; `scripts/ee_checks_gfs_gridmet.js` |
 | P1-R3-03 | Document strict temporal input interface | Done (draft, awaiting sign-off) | `docs/temporal_input_contract.md` |
 | (follow-up) | GFS precipitation definition change at 2019-11-07 | Done. Break confirmed against observed precipitation; channel recommended DISABLE | `scripts/check_gfs_precip_break.py`; audit section 8.4; `docs/evidence/gfs_precip_break_check.csv` |
 
@@ -23,8 +23,17 @@
 | Direction classified | same run | PASS: GFS = `QUADRANT_LIMITED` (min -90, max 90); GRIDMET = `FULL_CIRCLE` | audit section 4 |
 | GFS initialization and valid-time evidence documented; unknowns stay UNKNOWN | Code trace of `FirePred.py` lines 60-63 | PARTIAL: run (00Z of day D) is confirmed from code; the lead hours actually selected, Level A and Level B are recorded as UNKNOWN pending EE checks 1-2 | audit sections 6, 8.3, 8.7 |
 | Recommendation explicit | n/a | PASS: GFS downwind = DISABLE; GRIDMET downwind = CONDITIONAL; GFS/FiLM = CONDITIONAL | audit section 9; `docs/gfs_branch_gating.md` |
-| Role 4 receives the audit evidence before freezing channel decisions | Send the files listed in section 4 | NOT DONE | (add date and acknowledgement) |
+| Role 4 receives the audit evidence before freezing channel decisions | Send the files listed in section 4 | **NOT DONE — the only unmet item in this table** | (add date and acknowledgement) |
 | Strict model config contains no GFS channels | `cd ml && pytest -k strict_config` | PASS | `configs/temporal_unet.yaml` |
+
+## 2a. Deviations from the Phase 1 brief, stated for the reviewer
+
+| Brief says | What I did | Why |
+|---|---|---|
+| "Inspect the raw HDF5 channel arrays" | Audited the released GeoTIFFs (13,607 files, 1,363 sampled) | The HDF5 is a conversion of these same rasters, so the values are the same and the GeoTIFFs carry the band order the creation code writes. Flag it if the team wants the HDF5 path checked separately. |
+| "Work from actual channel indices/names supplied by Role 1" | Used `docs/wsts_data_dictionary.md` and cross-checked against the export order in `FirePred.py` lines 125-131 | Role 1 had not issued a channel manifest when this ran. The two sources agree, but this is an unconfirmed dependency: Role 1 should confirm the indices in section 2 of the audit. |
+| Commit `outputs/gfs_wind_direction_histogram.png` and `outputs/gfs_channel_range_summary.csv` | Committed copies under `docs/evidence/` | The repository's `.gitignore` excludes `outputs/`. The guide and the `.gitignore` contradict each other; this resolves it without changing either. |
+| "representative unique/sample values" | Covered by the percentile table plus the histogram reading in audit section 8.2 (the distribution is folded, not clipped) | A unique-value listing is not meaningful for a continuous float channel; the clipped-versus-folded question is what that check exists to answer. |
 
 ## 3. Dataset and source decisions
 - Verified:
@@ -34,6 +43,7 @@
   - GFS features come from the 00Z run of UTC day D; frames are UTC calendar days.
   - GFS wind speed is the speed of the mean vector, not the mean speed.
   - The baseline loader applies `sin()` only to angle channels.
+  - The GFS direction channel is folded rather than clipped: the histogram has no spike at the two extremes (audit section 8.2).
 - Assumed:
   - GRIDMET `th` is the direction the wind comes from, clockwise from north.
 - Unknown:

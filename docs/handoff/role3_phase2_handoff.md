@@ -3,7 +3,7 @@
 - Member name: Arkodyuti Bhattacharyya
 - Assigned role: Role 3, Temporal / Weather / GNN Engineer
 - Phase completed: Phase 2 (prepared ahead of schedule; cannot be marked complete before Gate 1 passes)
-- Date: 2026-11-12
+- Date: 2026-11-12 (final)
 - Branch / PR links: (fill in; keep on a feature branch until Gate 1 is recorded)
 
 ## 1. Tasks completed
@@ -15,6 +15,11 @@
 | (support) | Self-describing checkpoints for later OOF export | Done | `ml/src/fireguard_ml/models/checkpointing.py` |
 | (support) | Architecture note | Done | `docs/temporal_architecture_note.md` |
 | (support) | ML package metadata and CI so the tests actually run | Done | `ml/pyproject.toml`; `.github/workflows/ml-ci.yml` |
+
+Two defects found in my own checkpoint code during a final review and fixed, both with regression tests:
+
+1. `ConvLSTMUNet.spec()` omitted `lstm_kernel`, so any checkpoint trained with a kernel other than 3 could not be reloaded: the rebuilt model had the wrong ConvLSTM weight shapes and `load_state_dict` raised. The whole point of the self-describing checkpoint is that the offline export never needs the constructor arguments, so this defeated it. `spec()` now carries the kernel.
+2. `load_checkpoint` discarded the `strict` flag, so a benchmark-assumption model that had been trained with GFS channels loaded indistinguishably from a strict one. Loading now re-checks the channel names when the flag is set and exposes `model.strict_checkpoint`, so OOF export can refuse to put a forecast-fed model into a strict results table.
 
 Not done on purpose: no M3/M4 training (Phase 3, after Gate 2), no `gfs_benchmark_assumption.yaml` (audit has not passed Level A), no GNN.
 
@@ -30,12 +35,22 @@ Not done on purpose: no M3/M4 training (Phase 3, after Gate 2), no `gfs_benchmar
 | Downwind baseline supported by verified direction or explicitly disabled | n/a | PASS: disabled, with reasons | `docs/gfs_branch_gating.md` |
 | Optional GNN has not displaced required work | n/a | PASS: not started | |
 
-Full suite: from the repo root, `pip install -e "ml[dev]"` then `cd ml && pytest -q` gives 28 passed, and `ruff check src` is clean (run 2026-11-12, Python 3.13, CPU PyTorch). `.github/workflows/ml-ci.yml` runs both on every push to a role branch and on every PR to main.
+Full suite: from the repo root, `pip install -e "ml[dev]"` then `cd ml && pytest -q` gives 31 passed, and `ruff check src` is clean at the repository's 100-character line length (run 2026-11-12, CPU PyTorch). `.github/workflows/ml-ci.yml` runs both on every push to a role branch and on every PR to main.
+
+## 2a. Deviations from the Phase 2 brief, stated for the reviewer
+
+| Brief says | What I did | Why |
+|---|---|---|
+| `src/fireguard/models/temporal_unet.py`, `src/fireguard/models/convlstm.py`, `tests/test_convlstm_shapes.py` | `ml/src/fireguard_ml/models/...` and `ml/src/fireguard_ml/tests/...` | `backend/src/fireguard` already owns the name `fireguard` and has its own `models` subpackage, so `from fireguard.models import ...` resolves to the backend. The ML package is `fireguard_ml` and lives under `ml/`, which is where this repository keeps ML code. |
+| (not mentioned) | Added `ml/pyproject.toml` and `.github/workflows/ml-ci.yml` | Without package metadata the test suite could not be collected at all, and nothing in CI covered `ml/`. Both mirror `backend/`. |
+| "Confirm tensor dimensions with synthetic input and one real sample batch" | Both done; the real-sample script deliberately selects a window whose target day contains fire | Each event begins with quiet buffer days, so the first valid window has an all-negative target and would not exercise the target decoding. |
+
+Dangling reference, for Role 1: `docs/wsts_data_dictionary.md` is cited by the audit, the input contract and two scripts, but is not in the repository. Every schema fact was cross-checked against `FirePred.py`, so nothing depends on it alone.
 
 ## 3. Dataset and source decisions
 - Verified: frame order (oldest to newest) and target definition from the pinned loader code; UTC day boundary from the creation code.
 - Assumed: `T = 5` input days (plan v4 working candidate).
-- Unknown: final `c_strict` (35 is only the upper bound); behaviour when an event has a missing day.
+- Unknown: final `c_strict` (35 is only the upper bound); behaviour when an event has a missing day; whether static channels arrive inside each frame or as a separate tensor.
 - Excluded/leaky: GFS channels from M3 and M4.
 
 ## 4. Interface hand-offs

@@ -23,7 +23,8 @@ class ConvLSTMCell(nn.Module):
             raise ValueError("kernel_size must be odd so spatial size is preserved")
         self.in_ch = in_ch
         self.hidden_ch = hidden_ch
-        self.gates = nn.Conv2d(in_ch + hidden_ch, 4 * hidden_ch, kernel_size, padding=kernel_size // 2)
+        self.gates = nn.Conv2d(in_ch + hidden_ch, 4 * hidden_ch, kernel_size,
+                               padding=kernel_size // 2)
         with torch.no_grad():
             # chunk order is (input, forget, cell, output); bias the forget gate towards remembering
             self.gates.bias[hidden_ch : 2 * hidden_ch].fill_(1.0)
@@ -42,13 +43,15 @@ class ConvLSTMCell(nn.Module):
 
 
 class ConvLSTM(nn.Module):
-    def __init__(self, in_ch: int, hidden_ch: int | Sequence[int], kernel_size: int = 3, num_layers: int = 1):
+    def __init__(self, in_ch: int, hidden_ch: int | Sequence[int], kernel_size: int = 3,
+                 num_layers: int = 1):
         super().__init__()
         hidden = [hidden_ch] * num_layers if isinstance(hidden_ch, int) else list(hidden_ch)
         if len(hidden) != num_layers:
             raise ValueError("hidden_ch list length must equal num_layers")
         self.cells = nn.ModuleList(
-            ConvLSTMCell(in_ch if i == 0 else hidden[i - 1], hidden[i], kernel_size) for i in range(num_layers)
+            ConvLSTMCell(in_ch if i == 0 else hidden[i - 1], hidden[i], kernel_size)
+            for i in range(num_layers)
         )
         self.out_ch = hidden[-1]
 

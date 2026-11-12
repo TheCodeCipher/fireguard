@@ -85,7 +85,8 @@ def test_checkpoint_rejects_forecast_channels(tmp_path, bad_name):
 
 
 def test_non_strict_checkpoint_is_labelled(tmp_path):
-    # the benchmark-assumption branch may store forecast channels, but only with strict=False, and the flag is saved
+    # the benchmark-assumption branch may store forecast channels, but only with
+    # strict=False, and the flag is saved
     import torch as _t
     m = make(StackedDaysUNet)
     path = tmp_path / "bench.pt"
@@ -109,7 +110,7 @@ def test_checkpoint_checks_channel_count_and_T(tmp_path):
 
 
 def _repo_root() -> Path:
-    """Walk up until the shared configs/ folder is found, so moving this file cannot break the test."""
+    """Walk up to the shared configs/ folder, so moving this file cannot break the test."""
     for parent in Path(__file__).resolve().parents:
         if (parent / "configs" / "temporal_unet.yaml").is_file():
             return parent
@@ -141,3 +142,25 @@ def test_strict_config_is_consistent_with_the_models():
         assert 2 ** kwargs["depth"] == cfg["data"]["pad_multiple"]
         model = MODEL_REGISTRY[m["model_type"]](c_strict=C, T=t, **kwargs)
         assert model(torch.randn(1, t, C, 32, 64)).shape == (1, 1, 32, 64)
+
+
+def test_m4_checkpoint_round_trip_preserves_a_non_default_lstm_kernel(tmp_path):
+    # lstm_kernel changes the ConvLSTM weight shapes; if spec() omits it the reload fails outright
+    m = ConvLSTMUNet(C, T, BASE, DEPTH, lstm_kernel=5).eval()
+    x = torch.randn(1, T, C, 64, 64)
+    before = m.predict(x)
+    path = tmp_path / "k5.pt"
+    save_checkpoint(m, path, META)
+    m2, _ = load_checkpoint(path)
+    assert m2.spec()["lstm_kernel"] == 5
+    assert torch.equal(before, m2.predict(x))
+
+
+@pytest.mark.parametrize("cls", [StackedDaysUNet, ConvLSTMUNet])
+def test_loaded_checkpoint_reports_whether_it_was_strict(cls, tmp_path):
+    strict_path, bench_path = tmp_path / "s.pt", tmp_path / "b.pt"
+    save_checkpoint(make(cls), strict_path, META)
+    save_checkpoint(make(cls), bench_path, {**META, "channels": CHANNELS[:-1] + ["gfs_wind_speed"]},
+                    strict=False)
+    assert load_checkpoint(strict_path)[0].strict_checkpoint is True
+    assert load_checkpoint(bench_path)[0].strict_checkpoint is False

@@ -1,6 +1,6 @@
 # Temporal input contract (Role 3)
 
-> DRAFT, revised 2026-11-11. Status words: **VERIFIED** (seen in the pinned loader code, the creation code or a loaded sample), **ASSUMED**, **UNKNOWN**, **proposed** (a design choice awaiting sign-off). Sources: `docs/wsts_data_dictionary.md` (pinned baseline commit f62dc49, one sample event); loader `src/dataloader/FireSpreadDataset.py` at f62dc49; creation code `FirePred.py` at f6c5167. Needs sign-off from Role 1 (sequence semantics), Role 2 (model contract, padding) and Role 4 (strict channel list, splits).
+> DRAFT, revised 2026-11-11. Status words: **VERIFIED** (seen in the pinned loader code, the creation code or a loaded sample), **ASSUMED**, **UNKNOWN**, **proposed** (a design choice awaiting sign-off). Sources: `docs/wsts_data_dictionary.md` (pinned baseline commit f62dc49, one sample event; Role 1's artifact, not yet committed to this repository); loader `src/dataloader/FireSpreadDataset.py` at f62dc49; creation code `FirePred.py` at f6c5167. Needs sign-off from Role 1 (sequence semantics), Role 2 (model contract, padding) and Role 4 (strict channel list, splits).
 
 ## 1. Sequence semantics
 
