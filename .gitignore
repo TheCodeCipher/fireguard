@@ -12,4 +12,5 @@ __pycache__/
 *.db
 *.sqlite
 *.sqlite3
-'@ | Add-Content .gitignore
+'@ | Add-Content .gitignore# Locally generated replay artifacts
+artifacts/
