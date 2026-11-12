@@ -8,12 +8,12 @@ used instead of flattening each frame into a vector.
 """
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Tuple
+from collections.abc import Sequence
 
 import torch
 from torch import nn
 
-State = Tuple[torch.Tensor, torch.Tensor]
+State = tuple[torch.Tensor, torch.Tensor]
 
 
 class ConvLSTMCell(nn.Module):
@@ -52,11 +52,11 @@ class ConvLSTM(nn.Module):
         )
         self.out_ch = hidden[-1]
 
-    def forward(self, x: torch.Tensor, state: Optional[List[State]] = None):
+    def forward(self, x: torch.Tensor, state: list[State] | None = None):
         if x.ndim != 5:
             raise ValueError(f"expected [B, T, C, H, W], got {tuple(x.shape)}")
         seq = x
-        finals: List[State] = []
+        finals: list[State] = []
         for li, cell in enumerate(self.cells):
             st = state[li] if state is not None else cell.init_state(seq[:, 0])
             outs = []

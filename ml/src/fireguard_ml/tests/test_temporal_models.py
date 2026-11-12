@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 import torch
 
-from fireguard.models.checkpointing import REQUIRED_META, load_checkpoint, save_checkpoint
-from fireguard.models.temporal_unet import ConvLSTMUNet, StackedDaysUNet
+from fireguard_ml.models.checkpointing import REQUIRED_META, load_checkpoint, save_checkpoint
+from fireguard_ml.models.temporal_unet import ConvLSTMUNet, StackedDaysUNet
 
 T, C, BASE, DEPTH = 5, 6, 8, 5
 CHANNELS = [f"ch{i}" for i in range(C)]
@@ -108,7 +108,15 @@ def test_checkpoint_checks_channel_count_and_T(tmp_path):
         save_checkpoint(m, tmp_path / "d.pt", {**META, "T": T + 1})
 
 
-CFG_PATH = Path(__file__).resolve().parents[1] / "configs" / "temporal_unet.yaml"
+def _repo_root() -> Path:
+    """Walk up until the shared configs/ folder is found, so moving this file cannot break the test."""
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "configs" / "temporal_unet.yaml").is_file():
+            return parent
+    raise RuntimeError("configs/temporal_unet.yaml not found above " + __file__)
+
+
+CFG_PATH = _repo_root() / "configs" / "temporal_unet.yaml"
 
 
 def test_strict_config_has_no_gfs():
@@ -118,7 +126,7 @@ def test_strict_config_has_no_gfs():
 
 def test_strict_config_is_consistent_with_the_models():
     yaml = pytest.importorskip("yaml")
-    from fireguard.models.temporal_unet import MODEL_REGISTRY
+    from fireguard_ml.models.temporal_unet import MODEL_REGISTRY
 
     cfg = yaml.safe_load(CFG_PATH.read_text(encoding="utf8"))
     assert cfg["strict"] is True

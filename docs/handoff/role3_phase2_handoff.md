@@ -3,17 +3,18 @@
 - Member name: Arkodyuti Bhattacharyya
 - Assigned role: Role 3, Temporal / Weather / GNN Engineer
 - Phase completed: Phase 2 (prepared ahead of schedule; cannot be marked complete before Gate 1 passes)
-- Date: 2026-11-11
+- Date: 2026-11-12
 - Branch / PR links: (fill in; keep on a feature branch until Gate 1 is recorded)
 
 ## 1. Tasks completed
 | Task ID | Description | Status | Evidence/artifact |
 |---|---|---|---|
-| P2-R3-01 | Stacked-days U-Net (M3) interface | Done | `src/fireguard/models/temporal_unet.py` (`StackedDaysUNet`); `configs/temporal_unet.yaml` |
-| P2-R3-02 | ConvLSTM module and M4 interface, tested | Done on synthetic input; real-sample run pending | `src/fireguard/models/convlstm.py`; `ConvLSTMUNet`; `tests/test_convlstm_shapes.py`; `scripts/smoke_temporal_real_sample.py` |
+| P2-R3-01 | Stacked-days U-Net (M3) interface | Done | `ml/src/fireguard_ml/models/temporal_unet.py` (`StackedDaysUNet`); `configs/temporal_unet.yaml` |
+| P2-R3-02 | ConvLSTM module and M4 interface, tested | Done on synthetic input; real-sample run pending | `ml/src/fireguard_ml/models/convlstm.py`; `ConvLSTMUNet`; `ml/src/fireguard_ml/tests/test_convlstm_shapes.py`; `scripts/smoke_temporal_real_sample.py` |
 | P2-R3-03 | Gate GFS/downwind branches; document no-GFS default | Done | `docs/gfs_branch_gating.md`; guards in `checkpointing.py` and tests |
-| (support) | Self-describing checkpoints for later OOF export | Done | `src/fireguard/models/checkpointing.py` |
+| (support) | Self-describing checkpoints for later OOF export | Done | `ml/src/fireguard_ml/models/checkpointing.py` |
 | (support) | Architecture note | Done | `docs/temporal_architecture_note.md` |
+| (support) | ML package metadata and CI so the tests actually run | Done | `ml/pyproject.toml`; `.github/workflows/ml-ci.yml` |
 
 Not done on purpose: no M3/M4 training (Phase 3, after Gate 2), no `gfs_benchmark_assumption.yaml` (audit has not passed Level A), no GNN.
 
@@ -22,14 +23,14 @@ Not done on purpose: no M3/M4 training (Phase 3, after Gate 2), no `gfs_benchmar
 |---|---|---|---|
 | Temporal frame order matches the approved WSTS loader semantics | Read of pinned loader (f62dc49) lines 137-158 and 230 | PASS from code; Role 1's confirmation on a loaded multi-day sample pending | `docs/temporal_input_contract.md` section 1 |
 | M3 receives the same strict channels and data splits as M1 | `c_strict` is a constructor argument; config points to Role 4's manifest | READY, cannot be shown until Role 4 freezes the strict list and manifests | `configs/temporal_unet.yaml` |
-| ConvLSTM forward pass works on synthetic and representative real feature-map shapes | `pytest tests/test_convlstm_shapes.py`; `python scripts/smoke_temporal_real_sample.py --data-root <WSTS>` | Synthetic PASS (10 x 11 bottleneck of a 320 x 352 frame). Real sample: NOT YET RUN on the dataset | pytest output; `outputs/temporal_real_sample_smoke.json` once run |
-| ConvLSTM output preserves spatial dimensions for the decoder | `pytest tests` | PASS | `test_cell_preserves_spatial_shape`, `test_output_shape_matches_padded_input` |
-| Strict configs contain no GFS channels | `pytest tests/test_temporal_models.py -k "strict_config or forecast"` | PASS | 6 tests |
+| ConvLSTM forward pass works on synthetic and representative real feature-map shapes | `cd ml && pytest`; `python scripts/smoke_temporal_real_sample.py --data-root <WSTS>` | Synthetic PASS (10 x 11 bottleneck of a 320 x 352 frame). Real sample: NOT YET RUN on the dataset | pytest output; `outputs/temporal_real_sample_smoke.json` once run |
+| ConvLSTM output preserves spatial dimensions for the decoder | `cd ml && pytest` | PASS | `test_cell_preserves_spatial_shape`, `test_output_shape_matches_padded_input` |
+| Strict configs contain no GFS channels | `cd ml && pytest -k "strict_config or forecast"` | PASS | 6 tests |
 | GFS/FiLM remains separate and labelled benchmark-assumption | n/a | PASS: branch disabled, conditions written down | `docs/gfs_branch_gating.md` |
 | Downwind baseline supported by verified direction or explicitly disabled | n/a | PASS: disabled, with reasons | `docs/gfs_branch_gating.md` |
 | Optional GNN has not displaced required work | n/a | PASS: not started | |
 
-Full suite: `pytest tests -q` gives 28 passed (run on 2026-11-11 with Python 3.13 and PyTorch 2.15, CPU). Re-run in the project's Python 3.11 environment and in CI before merging.
+Full suite: from the repo root, `pip install -e "ml[dev]"` then `cd ml && pytest -q` gives 28 passed, and `ruff check src` is clean (run 2026-11-12, Python 3.13, CPU PyTorch). `.github/workflows/ml-ci.yml` runs both on every push to a role branch and on every PR to main.
 
 ## 3. Dataset and source decisions
 - Verified: frame order (oldest to newest) and target definition from the pinned loader code; UTC day boundary from the creation code.

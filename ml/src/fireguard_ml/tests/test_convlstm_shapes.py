@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from fireguard.models.convlstm import ConvLSTM, ConvLSTMCell
+from fireguard_ml.models.convlstm import ConvLSTM, ConvLSTMCell
 
 
 def test_cell_preserves_spatial_shape():

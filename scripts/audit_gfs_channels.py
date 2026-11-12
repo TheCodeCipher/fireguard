@@ -156,7 +156,7 @@ Sources read on 2026-11-11: `FirePred.py` in SebastianGer/WildfireSpreadTSCreate
 | GFS Level A | Borderline at best (F24 is valid at 00:00Z on D+1); FAIL if EE check 1 shows more than F01-F24 | UNKNOWN | 8.3 |
 | GFS Level B | Publication lag of the 00Z run not measured | UNKNOWN | 8.3 |
 | Day boundary | UTC calendar day. Date strings carry no time zone (Earth Engine reads them as UTC) and fire detections are filtered on `acq_date`. | VERIFIED from code | lines 42-63, 116-120 |
-| GFS precipitation meaning | Different rule before and after 2019-11-07, and neither rule gives a 24-hour total if the catalogue's description applies | UNKNOWN | 8.4 |
+| GFS precipitation meaning | Break at 2019-11-07 confirmed against observed precipitation. Neither regime is a daily total. A second, unexplained drift sits inside the post-change period. | VERIFIED (the break); the quantity the channel actually holds is UNKNOWN | 8.4 |
 | GFS wind speed | Speed of the 24-field mean vector, not mean speed | VERIFIED | lines 68-73 |
 | GRIDMET direction range | 0-360, all four sectors populated | VERIFIED | sections 3, 4 |
 | GRIDMET direction convention | Degrees clockwise from north, direction the wind comes FROM | ASSUMED | 8.5 |
@@ -187,10 +187,27 @@ Sources read on 2026-11-11: `FirePred.py` in SebastianGer/WildfireSpreadTSCreate
 - Code (lines 78-85): for dates up to and including 2019-11-07 the selected fields are summed; after that the last field is taken. The comment says the product changed from rain within a one-hour interval to cumulative rain. The following `rename` is not assigned, so the band keeps its source name; band order is unaffected.
 - The Earth Engine catalogue describes `total_precipitation_surface` as cumulative precipitation over the previous 1 to 6 hours, depending on the forecast hour by ((F - 1) % 6) + 1, and says totals should be built from forecast hours that are multiples of 6 to avoid double counting. If that description holds for the period, summing F01-F24 counts the same rain several times, and taking the last field keeps only the final six hours. Neither is a 24-hour total.
 - Supporting numbers from this audit: the yearly mean falls from 17.5 (2018) and 20.2 (2019) to 5.6 (2020) and 0.86 (2021), and the pooled maximum of 820 is above the catalogue's estimated band maximum of 626.75, which a sum of several fields can exceed and a single field should not.
-- Weather differs between years, so these numbers alone do not prove a break. `scripts/check_gfs_precip_break.py` compares against observed GRIDMET precipitation; paste its table below when run. EE check 4 shows the field's behaviour on each side of the change date.
+- Weather differs between years, so those numbers alone do not prove a break. `scripts/check_gfs_precip_break.py` controls for it by comparing against observed GRIDMET precipitation; its result is below and it does prove the break. EE check 4 would additionally show the field's behaviour hour by hour on each side of the change date.
 - Consequence for leave-one-year-out: the 2018 test fold is entirely in the "sum" regime, 2020 and 2021 entirely in the "last" regime, and 2019 is split. A model with this channel would see a different quantity at test time than in most of its training data.
 
-`check_gfs_precip_break.py` result: NOT YET RUN (paste `outputs/gfs_precip_break_check.csv` here).
+**Result of `check_gfs_precip_break.py`** (run 2026-11-11 over 1,361 sampled files; GRIDMET band 6, observed mm/day, is the reference; evidence copy `docs/evidence/gfs_precip_break_check.csv`):
+
+| Group | Files | Observed GRIDMET mean (mm/day) | GFS channel mean | GFS / GRIDMET | Median of per-file GFS means | Largest GFS value seen |
+|---|---:|---:|---:|---:|---:|---:|
+| sum rule (<= 2019-11-07) | 514 | 0.491 | 16.616 | 33.87 | 4.181 | 820.0 |
+| last rule (> 2019-11-07) | 847 | 0.493 | 3.237 | 6.57 | 0.009 | 204.2 |
+| 2018 | 378 | 0.452 | 16.256 | 36.00 | 3.718 | 820.0 |
+| 2019 | 142 | 0.631 | 18.196 | 28.85 | 6.193 | 258.2 |
+| 2020 | 429 | 0.353 | 5.154 | 14.60 | 0.717 | 204.2 |
+| 2021 | 412 | 0.626 | 0.833 | 1.33 | 0.000 | 136.3 |
+
+How to read it. Observed precipitation is the control and it is flat across the two regimes: 0.491 against 0.493 mm/day. Weather therefore does not explain the difference. Against that flat reference the channel falls by a factor of 5.2, from 33.9 times observed precipitation to 6.6 times. **The break is real and the channel means different things on either side of 2019-11-07.**
+
+Each regime also fails on its own terms. Under the sum rule the channel is about 34 times observed daily precipitation, which is what repeatedly adding overlapping accumulation windows would give. Under the last rule the typical file is empty: the median of per-file means is 0.009 against 4.181 before the change, which is what keeping only the final accumulation bucket would give. Neither is a 24-hour total.
+
+One finding beyond the documented change. 2020 and 2021 both lie wholly after the change date, yet their ratios are 14.60 and 1.33, and the median file in 2021 is 0.000. A second discontinuity sits inside the post-change period and the code does not explain it. UNKNOWN; EE check 4 is the next step.
+
+Consequence. The released channel cannot be made comparable across folds by rescaling, because neither regime holds a known quantity. Using it would need precipitation rebuilt in Earth Engine from forecast hours that are multiples of 6, which is a dataset rebuild and out of scope, exactly as for wind direction. The recommendation is therefore DISABLE, not CONDITIONAL.
 
 ### 8.5 GRIDMET wind direction and day window (evidence for Role 4)
 
@@ -281,7 +298,7 @@ def build_report(ctx):
     else:
         rec_down_gm = "DISABLE: direction could not be shown to be full-circle."
     rec_film = ("CONDITIONAL: benchmark-assumption experiment only, never strict M1-M4. Blocked until EE check 1 is run and Role 4 rules on Level A. "
-                "If it goes ahead: leave out the direction band (20), and leave out the precipitation band (18) unless section 8.4 is resolved. "
+                "If it goes ahead, use at most wind speed (19), temperature (21) and humidity (22): the direction band (20) is folded and the precipitation band (18) is not a daily total (section 8.4). "
                 "See docs/gfs_branch_gating.md.")
 
     L = []
@@ -313,7 +330,7 @@ def build_report(ctx):
         p = a.pct()
         A(f"| {name} | {fmt(a.min)} | {fmt(p[0])} | {fmt(p[3])} | {fmt(p[6])} | {fmt(a.max)} | {fmt(a.mean())} | {a.nan_frac():.4f} |")
     A("")
-    A("Full table (including per-year rows): `outputs/gfs_channel_range_summary.csv`. Histogram: `outputs/gfs_wind_direction_histogram.png`.")
+    A("Full table (including per-year rows): `outputs/gfs_channel_range_summary.csv`. Histogram: `outputs/gfs_wind_direction_histogram.png`. `outputs/` is git-ignored, so the committed copies of this evidence live in `docs/evidence/`.")
     A("")
     A("## 4. Direction classification")
     A(f"- **GFS wind direction (band 20): `{gfs_cls}`**. {gfs_why}.")

@@ -2,7 +2,7 @@
 #
 # STRICT configuration. The five GFS forecast channels are excluded and must never be listed here.
 # The GFS/FiLM benchmark-assumption branch gets its own file (gfs_benchmark_assumption.yaml) and only
-# after the conditions in docs/gfs_branch_gating.md are met. tests/test_temporal_models.py enforces this.
+# after the conditions in docs/gfs_branch_gating.md are met. ml/src/fireguard_ml/tests/test_temporal_models.py enforces this.
 
 schema_version: 1
 strict: true

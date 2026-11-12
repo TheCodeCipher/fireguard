@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Shape smoke test of M3 and M4 on ONE REAL WSTS sample (Role 3, task P2-R3-02).
 
-Run from the repo root (after `pip install -e .` or with PYTHONPATH=src):
+Run from the repo root:
+    pip install -e "ml[dev,scripts]"          # once, from the repo root
     python scripts/smoke_temporal_real_sample.py --data-root /path/to/WildfireSpreadTS --T 5
 
 What it proves: real frames, in file-date order, go through both models and come out as one logit per
@@ -26,7 +27,13 @@ import rasterio
 import torch
 import torch.nn.functional as F
 
-from fireguard.models.temporal_unet import ConvLSTMUNet, StackedDaysUNet
+try:
+    from fireguard_ml.models.temporal_unet import ConvLSTMUNet, StackedDaysUNet
+except ModuleNotFoundError as exc:  # the package is not installed in this interpreter
+    raise SystemExit(
+        f"cannot import fireguard_ml ({exc}).\n"
+        'From the repo root run:  pip install -e "ml[dev,scripts]"'
+    ) from exc
 
 EXPECTED_BANDS = 23
 GFS_BANDS_0BASED = [17, 18, 19, 20, 21]  # docs/wsts_data_dictionary.md; verified against FirePred.py band order

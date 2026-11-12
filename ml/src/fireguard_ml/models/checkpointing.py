@@ -6,7 +6,6 @@ depends on someone remembering the constructor arguments, channel order or fold.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Tuple
 
 import torch
 
@@ -26,7 +25,7 @@ def assert_strict_channels(channels) -> None:
         raise ValueError(f"GFS / forecast channels are not allowed in strict models: {bad}")
 
 
-def save_checkpoint(model: _TemporalBase, path: str | Path, meta: Dict[str, object], strict: bool = True) -> None:
+def save_checkpoint(model: _TemporalBase, path: str | Path, meta: dict[str, object], strict: bool = True) -> None:
     missing = [k for k in REQUIRED_META if k not in meta]
     if missing:
         raise ValueError(f"checkpoint meta is missing: {missing}")
@@ -41,7 +40,7 @@ def save_checkpoint(model: _TemporalBase, path: str | Path, meta: Dict[str, obje
     torch.save(payload, path)
 
 
-def load_checkpoint(path: str | Path, map_location: str = "cpu") -> Tuple[_TemporalBase, Dict[str, object]]:
+def load_checkpoint(path: str | Path, map_location: str = "cpu") -> tuple[_TemporalBase, dict[str, object]]:
     payload = torch.load(path, map_location=map_location, weights_only=True)
     spec = dict(payload["spec"])
     cls = MODEL_REGISTRY[spec.pop("model_type")]

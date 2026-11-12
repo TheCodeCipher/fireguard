@@ -46,10 +46,10 @@ Both models are called the same way so that training and export code does not br
 
 - `H_pad` and `W_pad` must be multiples of 32 (depth 5). The models raise an error otherwise. The padding utility is owned by Role 2; padded pixels never count in loss or metrics (valid mask), and neither loss nor mask handling is inside the model.
 - Both use the same strict channels and the same split manifests as M1.
-- Checkpoints are written with `fireguard.models.checkpointing.save_checkpoint`, which requires `channels`, `T`, `preprocessing_version`, `config_hash`, `fold` and `split_manifest_hash`, and refuses GFS or forecast channel names in a strict checkpoint.
+- Checkpoints are written with `fireguard_ml.models.checkpointing.save_checkpoint`, which requires `channels`, `T`, `preprocessing_version`, `config_hash`, `fold` and `split_manifest_hash`, and refuses GFS or forecast channel names in a strict checkpoint.
 - Do not start large M4 training in Phase 2.
 
-Status: proposed. Implemented in `src/fireguard/models/temporal_unet.py` and `convlstm.py`, tested in `tests/`.
+Status: proposed. Implemented in `ml/src/fireguard_ml/models/temporal_unet.py` and `convlstm.py`, tested in `ml/src/fireguard_ml/tests/`.
 
 ## 5. Open items to close before Phase 2 training
 

@@ -13,8 +13,6 @@ the ConvLSTM at the bottleneck. M3 and M4 use the same encoder/decoder blocks fo
 """
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
-
 import torch
 from torch import nn
 
@@ -34,7 +32,7 @@ class ConvBlock(nn.Sequential):
         )
 
 
-def level_channels(base: int, depth: int) -> List[int]:
+def level_channels(base: int, depth: int) -> list[int]:
     return [base * 2 ** min(i, 3) for i in range(depth + 1)]
 
 
@@ -47,7 +45,7 @@ class Encoder(nn.Module):
         self.downs = nn.ModuleList(ConvBlock(ch[i - 1], ch[i]) for i in range(1, depth + 1))
         self.pool = nn.MaxPool2d(2)
 
-    def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> list[torch.Tensor]:
         feats = [self.stem(x)]
         for blk in self.downs:
             feats.append(blk(self.pool(feats[-1])))
@@ -62,9 +60,9 @@ class Decoder(nn.Module):
         self.blocks = nn.ModuleList(ConvBlock(2 * ch[i - 1], ch[i - 1]) for i in range(depth, 0, -1))
         self.head = nn.Conv2d(ch[0], 1, 1)
 
-    def forward(self, bottleneck: torch.Tensor, skips: List[torch.Tensor]) -> torch.Tensor:
+    def forward(self, bottleneck: torch.Tensor, skips: list[torch.Tensor]) -> torch.Tensor:
         x = bottleneck
-        for up, blk, skip in zip(self.ups, self.blocks, reversed(skips[:-1])):
+        for up, blk, skip in zip(self.ups, self.blocks, reversed(skips[:-1]), strict=True):
             x = blk(torch.cat([up(x), skip], dim=1))
         return self.head(x)
 
@@ -78,7 +76,7 @@ class _TemporalBase(nn.Module):
             raise ValueError("c_strict and T must be >= 1")
         self.c_strict, self.T, self.base, self.depth = c_strict, T, base, depth
 
-    def spec(self) -> Dict[str, object]:
+    def spec(self) -> dict[str, object]:
         return dict(model_type=self.model_type, c_strict=self.c_strict, T=self.T, base=self.base, depth=self.depth)
 
     def _check(self, x: torch.Tensor) -> None:
@@ -92,7 +90,7 @@ class _TemporalBase(nn.Module):
             raise ValueError(f"H and W must be multiples of {m} (pad first); got {h}x{w}")
 
     @torch.no_grad()
-    def predict(self, x: torch.Tensor, orig_hw: Optional[Tuple[int, int]] = None) -> torch.Tensor:
+    def predict(self, x: torch.Tensor, orig_hw: tuple[int, int] | None = None) -> torch.Tensor:
         """Offline inference: probabilities [B, 1, H, W]. Crops bottom/right padding if orig_hw is given."""
         was_training = self.training
         self.eval()
