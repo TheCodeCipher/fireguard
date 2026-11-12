@@ -1,5 +1,3 @@
-@'
-
 # Python generated files
 __pycache__/
 *.py[cod]
@@ -12,5 +10,6 @@ __pycache__/
 *.db
 *.sqlite
 *.sqlite3
-'@ | Add-Content .gitignore# Locally generated replay artifacts
-artifacts/
+
+# Locally generated replay artifacts
+/backend/artifacts/
