@@ -1,0 +1,1762 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FireGuard API",
+    "description": "FireGuard backend API. FIRMS routes serve satellite observations; historical forecasts are retrieved as precomputed out-of-fold artifacts.",
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health Check",
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Check Api V1 Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/firms/availability": {
+      "get": {
+        "tags": [
+          "FIRMS"
+        ],
+        "summary": "Firms Availability",
+        "operationId": "firms_availability_api_v1_firms_availability_get",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/FIRMSSource"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FIRMSAvailabilityResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fires": {
+      "get": {
+        "tags": [
+          "FIRMS"
+        ],
+        "summary": "Query Fires",
+        "operationId": "query_fires_api_v1_fires_get",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/FIRMSSource"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Start Date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "End Date"
+            }
+          },
+          {
+            "name": "bbox",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "west,south,east,north",
+              "default": "-180,-90,180,90",
+              "title": "Bbox"
+            },
+            "description": "west,south,east,north"
+          },
+          {
+            "name": "confidence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/FireConfidence"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Confidence"
+            }
+          },
+          {
+            "name": "min_frp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Frp"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 5000,
+              "minimum": 1,
+              "default": 1000,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FiresResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/firms/observations": {
+      "get": {
+        "tags": [
+          "FIRMS"
+        ],
+        "summary": "Mock Firms Observations",
+        "operationId": "mock_firms_observations_api_v1_firms_observations_get",
+        "parameters": [
+          {
+            "name": "confidence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/FireConfidence"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Confidence"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MockFireObservationsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/wsts/events": {
+      "get": {
+        "tags": [
+          "WSTS Event Catalogue"
+        ],
+        "summary": "List Wsts Events",
+        "operationId": "list_wsts_events_api_v1_wsts_events_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 2035,
+                  "minimum": 2018
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "name": "region",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Region"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WSTSEventListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replays/{event_id}/origins": {
+      "get": {
+        "tags": [
+          "Historical Replay"
+        ],
+        "summary": "List Replay Origins",
+        "operationId": "list_replay_origins_api_v1_replays__event_id__origins_get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayOriginListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replays/{event_id}/{origin}/session": {
+      "post": {
+        "tags": [
+          "Historical Replay"
+        ],
+        "summary": "Create Replay Session",
+        "operationId": "create_replay_session_api_v1_replays__event_id___origin__session_post",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          },
+          {
+            "name": "origin",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Origin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplaySessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replays/{event_id}/{origin}/inputs": {
+      "get": {
+        "tags": [
+          "Historical Replay"
+        ],
+        "summary": "Get Replay Inputs",
+        "operationId": "get_replay_inputs_api_v1_replays__event_id___origin__inputs_get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          },
+          {
+            "name": "origin",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Origin"
+            }
+          },
+          {
+            "name": "X-Replay-Session-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Replay-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayInputsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replays/{event_id}/{origin}/forecast": {
+      "get": {
+        "tags": [
+          "Historical Replay"
+        ],
+        "summary": "Get Replay Forecast",
+        "operationId": "get_replay_forecast_api_v1_replays__event_id___origin__forecast_get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          },
+          {
+            "name": "origin",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Origin"
+            }
+          },
+          {
+            "name": "X-Replay-Session-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Replay-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayForecastResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replays/{event_id}/{origin}/metrics": {
+      "get": {
+        "tags": [
+          "Historical Replay"
+        ],
+        "summary": "Get Replay Metrics",
+        "operationId": "get_replay_metrics_api_v1_replays__event_id___origin__metrics_get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          },
+          {
+            "name": "origin",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Origin"
+            }
+          },
+          {
+            "name": "X-Replay-Session-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Replay-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayMetricsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replays/{event_id}/{origin}/reveal": {
+      "post": {
+        "tags": [
+          "Historical Replay"
+        ],
+        "summary": "Reveal Actual",
+        "operationId": "reveal_actual_api_v1_replays__event_id___origin__reveal_post",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          },
+          {
+            "name": "origin",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Origin"
+            }
+          },
+          {
+            "name": "X-Replay-Session-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Replay-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayRevealResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replays/{event_id}/{origin}/actual": {
+      "get": {
+        "tags": [
+          "Historical Replay"
+        ],
+        "summary": "Get Actual Target",
+        "operationId": "get_actual_target_api_v1_replays__event_id___origin__actual_get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          },
+          {
+            "name": "origin",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Origin"
+            }
+          },
+          {
+            "name": "X-Replay-Session-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Replay-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayActualResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/artifacts/{artifact_id}": {
+      "get": {
+        "tags": [
+          "Static Artifacts"
+        ],
+        "summary": "Get Static Artifact",
+        "operationId": "get_static_artifact_api_v1_artifacts__artifact_id__get",
+        "parameters": [
+          {
+            "name": "artifact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Artifact Id"
+            }
+          },
+          {
+            "name": "X-Replay-Session-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Replay-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "Root"
+        ],
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Root  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ArtifactDescriptor": {
+        "properties": {
+          "artifact_id": {
+            "type": "integer",
+            "title": "Artifact Id"
+          },
+          "artifact_type": {
+            "type": "string",
+            "title": "Artifact Type"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "checksum_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checksum Sha256"
+          }
+        },
+        "type": "object",
+        "required": [
+          "artifact_id",
+          "artifact_type",
+          "url"
+        ],
+        "title": "ArtifactDescriptor"
+      },
+      "CacheMetadata": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "pattern": "^(HIT|MISS|DISABLED)$",
+            "title": "Status"
+          },
+          "ttl_seconds": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ttl Seconds"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "ttl_seconds"
+        ],
+        "title": "CacheMetadata"
+      },
+      "FIRMSAvailabilityResponse": {
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/FIRMSSource"
+          },
+          "min_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Min Date"
+          },
+          "max_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Max Date"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retrieved At"
+          },
+          "cache": {
+            "$ref": "#/components/schemas/CacheMetadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "min_date",
+          "max_date",
+          "retrieved_at",
+          "cache"
+        ],
+        "title": "FIRMSAvailabilityResponse"
+      },
+      "FIRMSSource": {
+        "type": "string",
+        "enum": [
+          "VIIRS_SNPP_NRT",
+          "VIIRS_SNPP_SP",
+          "VIIRS_NOAA20_NRT",
+          "VIIRS_NOAA20_SP",
+          "VIIRS_NOAA21_NRT",
+          "VIIRS_NOAA21_SP"
+        ],
+        "title": "FIRMSSource"
+      },
+      "FireConfidence": {
+        "type": "string",
+        "enum": [
+          "low",
+          "nominal",
+          "high",
+          "unknown"
+        ],
+        "title": "FireConfidence"
+      },
+      "FireObservation": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude"
+          },
+          "brightness": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brightness"
+          },
+          "frp": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frp"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/FireConfidence",
+            "default": "unknown"
+          },
+          "confidence_raw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence Raw"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "instrument": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument"
+          },
+          "acquisition_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Acquisition Date"
+          },
+          "acquisition_time": {
+            "type": "string",
+            "pattern": "^\\d{4}$",
+            "title": "Acquisition Time"
+          },
+          "daynight": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daynight"
+          },
+          "source": {
+            "$ref": "#/components/schemas/FIRMSSource"
+          },
+          "product": {
+            "type": "string",
+            "title": "Product"
+          },
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude",
+          "platform",
+          "acquisition_date",
+          "acquisition_time",
+          "source",
+          "product",
+          "source_id"
+        ],
+        "title": "FireObservation"
+      },
+      "FiresResponse": {
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/FIRMSSource"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "product": {
+            "type": "string",
+            "title": "Product"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          },
+          "bbox": {
+            "type": "string",
+            "title": "Bbox"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retrieved At"
+          },
+          "data_age_seconds": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Age Seconds"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Count"
+          },
+          "total_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Count"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Offset"
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More"
+          },
+          "cache": {
+            "$ref": "#/components/schemas/CacheMetadata"
+          },
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/FireObservation"
+            },
+            "type": "array",
+            "title": "Observations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "platform",
+          "product",
+          "start_date",
+          "end_date",
+          "bbox",
+          "retrieved_at",
+          "count",
+          "total_count",
+          "limit",
+          "offset",
+          "has_more",
+          "cache",
+          "observations"
+        ],
+        "title": "FiresResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MockFireObservationsResponse": {
+        "properties": {
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/FireObservation"
+            },
+            "type": "array",
+            "title": "Observations"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode",
+            "default": "mock"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observations",
+          "count",
+          "source"
+        ],
+        "title": "MockFireObservationsResponse"
+      },
+      "ReplayActualResponse": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "origin_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Origin Date"
+          },
+          "revealed": {
+            "type": "boolean",
+            "title": "Revealed"
+          },
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactDescriptor"
+            },
+            "type": "array",
+            "title": "Artifacts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "origin_date",
+          "revealed",
+          "artifacts"
+        ],
+        "title": "ReplayActualResponse"
+      },
+      "ReplayForecastResponse": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "origin_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Origin Date"
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Target Date"
+          },
+          "protocol": {
+            "type": "string",
+            "title": "Protocol"
+          },
+          "fold_id": {
+            "type": "string",
+            "title": "Fold Id"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "config_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Hash"
+          },
+          "channel_manifest_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel Manifest Sha256"
+          },
+          "time_safety_status": {
+            "type": "string",
+            "title": "Time Safety Status"
+          },
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactDescriptor"
+            },
+            "type": "array",
+            "title": "Artifacts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "origin_date",
+          "target_date",
+          "protocol",
+          "fold_id",
+          "model_version",
+          "time_safety_status",
+          "artifacts"
+        ],
+        "title": "ReplayForecastResponse"
+      },
+      "ReplayInputsResponse": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "origin_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Origin Date"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "input_metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "origin_date",
+          "mode",
+          "input_metadata"
+        ],
+        "title": "ReplayInputsResponse"
+      },
+      "ReplayMetricItem": {
+        "properties": {
+          "metric_name": {
+            "type": "string",
+            "title": "Metric Name"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          },
+          "aggregation": {
+            "type": "string",
+            "title": "Aggregation"
+          },
+          "calibrator_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calibrator Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metric_name",
+          "value",
+          "aggregation"
+        ],
+        "title": "ReplayMetricItem"
+      },
+      "ReplayMetricsResponse": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "origin_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Origin Date"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/ReplayMetricItem"
+            },
+            "type": "array",
+            "title": "Metrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "origin_date",
+          "metrics"
+        ],
+        "title": "ReplayMetricsResponse"
+      },
+      "ReplayOriginItem": {
+        "properties": {
+          "origin_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Origin Date"
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Target Date"
+          },
+          "horizon_hours": {
+            "type": "integer",
+            "title": "Horizon Hours"
+          },
+          "protocol": {
+            "type": "string",
+            "title": "Protocol"
+          },
+          "fold_id": {
+            "type": "string",
+            "title": "Fold Id"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "split_name": {
+            "type": "string",
+            "title": "Split Name"
+          },
+          "is_oof": {
+            "type": "boolean",
+            "title": "Is Oof"
+          }
+        },
+        "type": "object",
+        "required": [
+          "origin_date",
+          "target_date",
+          "horizon_hours",
+          "protocol",
+          "fold_id",
+          "model_version",
+          "split_name",
+          "is_oof"
+        ],
+        "title": "ReplayOriginItem"
+      },
+      "ReplayOriginListResponse": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "origins": {
+            "items": {
+              "$ref": "#/components/schemas/ReplayOriginItem"
+            },
+            "type": "array",
+            "title": "Origins"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "count",
+          "mode",
+          "origins"
+        ],
+        "title": "ReplayOriginListResponse"
+      },
+      "ReplayRevealResponse": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "origin_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Origin Date"
+          },
+          "revealed": {
+            "type": "boolean",
+            "title": "Revealed"
+          },
+          "revealed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Revealed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "origin_date",
+          "revealed",
+          "revealed_at"
+        ],
+        "title": "ReplayRevealResponse"
+      },
+      "ReplaySessionResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "origin_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Origin Date"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "event_id",
+          "origin_date",
+          "expires_at"
+        ],
+        "title": "ReplaySessionResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WSTSEventItem": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "complex_group_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complex Group Id"
+          },
+          "p1_fold_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P1 Fold Id"
+          },
+          "p2_fold_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P2 Fold Id"
+          },
+          "source_dataset": {
+            "type": "string",
+            "title": "Source Dataset"
+          },
+          "has_replay": {
+            "type": "boolean",
+            "title": "Has Replay"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "source_dataset",
+          "has_replay"
+        ],
+        "title": "WSTSEventItem"
+      },
+      "WSTSEventListResponse": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/WSTSEventItem"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count",
+          "total_count",
+          "limit",
+          "offset",
+          "mode",
+          "events"
+        ],
+        "title": "WSTSEventListResponse"
+      }
+    }
+  }
+}
