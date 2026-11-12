@@ -1,11 +1,9 @@
 # FireGuard Role Hand-off Report
 
-- Member name: (fill in)
 - Assigned role: Role 4, Research / Evaluation / Leakage Audit Engineer
 - Phase completed: Phase 1 (READY FOR REVIEW; one run left before the manifests can be frozen, see section 6)
 - Branch: `role-4/ml/evaluation-protocol` (suggested, per CONTRIBUTING.md)
 - Date: 2026-11-13
-- Branch / PR links: (fill in)
 
 ## 1. Tasks completed
 | Task ID | Description | Status | Evidence/artifact |
