@@ -1,0 +1,291 @@
+{
+  "status": "FROZEN",
+  "grouping_input": "footprints",
+  "tiffs_unreadable": 0,
+  "events": 607,
+  "eval_samples": 10572,
+  "first_target_index": 5,
+  "decision": "single linkage kept: no group exceeds 20 % of any year's events",
+  "primary_30km_14d_single": {
+    "rule": "30 km / 14 d",
+    "linkage": "single",
+    "related_pairs": {
+      "overlap": 791,
+      "near": 6
+    },
+    "size_summary": {
+      "n_groups": 260,
+      "n_singletons": 200,
+      "median": 1.0,
+      "p90": 3.0,
+      "p95": 6.0,
+      "max": 64
+    },
+    "size_distribution": {
+      "1": 200,
+      "2": 26,
+      "3": 9,
+      "4": 7,
+      "5": 2,
+      "6": 4,
+      "7": 1,
+      "8": 1,
+      "9": 1,
+      "12": 2,
+      "19": 1,
+      "20": 1,
+      "21": 2,
+      "34": 1,
+      "39": 1,
+      "64": 1
+    },
+    "per_year": {
+      "2018": {
+        "raw_events": 176,
+        "groups_touching_year": 103,
+        "groups_anchored_to_year": 103,
+        "largest_group_id": "G2018_0034",
+        "largest_group_events_in_year": 17,
+        "largest_group_share": 0.09659090909090909,
+        "warning": false
+      },
+      "2019": {
+        "raw_events": 74,
+        "groups_touching_year": 46,
+        "groups_anchored_to_year": 36,
+        "largest_group_id": "G2018_0021",
+        "largest_group_events_in_year": 11,
+        "largest_group_share": 0.14864864864864866,
+        "warning": false
+      },
+      "2020": {
+        "raw_events": 201,
+        "groups_touching_year": 97,
+        "groups_anchored_to_year": 77,
+        "largest_group_id": "G2018_0034",
+        "largest_group_events_in_year": 24,
+        "largest_group_share": 0.11940298507462686,
+        "warning": false
+      },
+      "2021": {
+        "raw_events": 156,
+        "groups_touching_year": 62,
+        "groups_anchored_to_year": 44,
+        "largest_group_id": "G2018_0095",
+        "largest_group_events_in_year": 29,
+        "largest_group_share": 0.1858974358974359,
+        "warning": false
+      }
+    },
+    "warning": false,
+    "cross_year_groups": 31
+  },
+  "primary_30km_14d_complete": null,
+  "sensitivity_50km_30d_single": {
+    "rule": "50 km / 30 d",
+    "linkage": "single",
+    "related_pairs": {
+      "overlap": 791,
+      "near": 54
+    },
+    "size_summary": {
+      "n_groups": 244,
+      "n_singletons": 183,
+      "median": 1.0,
+      "p90": 3.700000000000017,
+      "p95": 6.849999999999994,
+      "max": 64
+    },
+    "size_distribution": {
+      "1": 183,
+      "2": 27,
+      "3": 9,
+      "4": 7,
+      "5": 2,
+      "6": 3,
+      "7": 2,
+      "9": 2,
+      "12": 1,
+      "19": 1,
+      "20": 1,
+      "21": 1,
+      "22": 1,
+      "23": 1,
+      "35": 1,
+      "39": 1,
+      "64": 1
+    },
+    "per_year": {
+      "2018": {
+        "raw_events": 176,
+        "groups_touching_year": 97,
+        "groups_anchored_to_year": 97,
+        "largest_group_id": "G2018_0034",
+        "largest_group_events_in_year": 17,
+        "largest_group_share": 0.09659090909090909,
+        "warning": false
+      },
+      "2019": {
+        "raw_events": 74,
+        "groups_touching_year": 44,
+        "groups_anchored_to_year": 34,
+        "largest_group_id": "G2018_0021",
+        "largest_group_events_in_year": 12,
+        "largest_group_share": 0.16216216216216217,
+        "warning": false
+      },
+      "2020": {
+        "raw_events": 201,
+        "groups_touching_year": 89,
+        "groups_anchored_to_year": 69,
+        "largest_group_id": "G2018_0034",
+        "largest_group_events_in_year": 24,
+        "largest_group_share": 0.11940298507462686,
+        "warning": false
+      },
+      "2021": {
+        "raw_events": 156,
+        "groups_touching_year": 62,
+        "groups_anchored_to_year": 44,
+        "largest_group_id": "G2018_0089",
+        "largest_group_events_in_year": 29,
+        "largest_group_share": 0.1858974358974359,
+        "warning": false
+      }
+    },
+    "warning": false,
+    "cross_year_groups": 30
+  },
+  "p1_folds": {
+    "2018": {
+      "train": {
+        "groups": 130,
+        "events": 171
+      },
+      "validation": {
+        "groups": 27,
+        "events": 37
+      },
+      "test": {
+        "groups": 103,
+        "events": 399
+      },
+      "validation_group_share": 0.17197452229299362,
+      "validation_share_in_range": true
+    },
+    "2019": {
+      "train": {
+        "groups": 185,
+        "events": 456
+      },
+      "validation": {
+        "groups": 39,
+        "events": 97
+      },
+      "test": {
+        "groups": 36,
+        "events": 54
+      },
+      "validation_group_share": 0.17410714285714285,
+      "validation_share_in_range": true
+    },
+    "2020": {
+      "train": {
+        "groups": 151,
+        "events": 461
+      },
+      "validation": {
+        "groups": 32,
+        "events": 44
+      },
+      "test": {
+        "groups": 77,
+        "events": 102
+      },
+      "validation_group_share": 0.17486338797814208,
+      "validation_share_in_range": true
+    },
+    "2021": {
+      "train": {
+        "groups": 179,
+        "events": 490
+      },
+      "validation": {
+        "groups": 37,
+        "events": 65
+      },
+      "test": {
+        "groups": 44,
+        "events": 52
+      },
+      "validation_group_share": 0.1712962962962963,
+      "validation_share_in_range": true
+    }
+  },
+  "p1_folds_under_sensitivity_rule": {
+    "2018": {
+      "train": {
+        "groups": 121,
+        "events": 170
+      },
+      "validation": {
+        "groups": 26,
+        "events": 32
+      },
+      "test": {
+        "groups": 97,
+        "events": 405
+      },
+      "validation_group_share": 0.17687074829931973,
+      "validation_share_in_range": true
+    },
+    "2019": {
+      "train": {
+        "groups": 173,
+        "events": 506
+      },
+      "validation": {
+        "groups": 37,
+        "events": 49
+      },
+      "test": {
+        "groups": 34,
+        "events": 52
+      },
+      "validation_group_share": 0.1761904761904762,
+      "validation_share_in_range": true
+    },
+    "2020": {
+      "train": {
+        "groups": 144,
+        "events": 445
+      },
+      "validation": {
+        "groups": 31,
+        "events": 64
+      },
+      "test": {
+        "groups": 69,
+        "events": 98
+      },
+      "validation_group_share": 0.17714285714285713,
+      "validation_share_in_range": true
+    },
+    "2021": {
+      "train": {
+        "groups": 165,
+        "events": 485
+      },
+      "validation": {
+        "groups": 35,
+        "events": 70
+      },
+      "test": {
+        "groups": 44,
+        "events": 52
+      },
+      "validation_group_share": 0.175,
+      "validation_share_in_range": true
+    }
+  }
+}
