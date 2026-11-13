@@ -20,15 +20,37 @@ Why skips from the last day: the target is D+1, and day D carries the finest-res
 | Fine-resolution detail from days before D | reaches the decoder through the skips | does not; only day D's skips are used |
 | Encoder cost per sample | one pass | T passes |
 
-## Size (measured, `C_strict = 35`, `T = 5`, `base = 32`, `depth = 5`)
+## Size (measured with the frozen strict list: `C_strict = 7`, `base = 32`, `depth = 5`)
 
-| Model | Parameters |
-|---|---:|
-| M3 | 8,403,681 |
-| M4 | 13,082,977 (of which ConvLSTM 4,719,616) |
-| M3 with `base = 40` | 13,112,601 |
+| Model | T = 5 | T = 3 |
+|---|---:|---:|
+| M3 | 8,363,361 | 8,359,329 |
+| M3 with `base = 40` (size-matched control) | 13,062,201 | 13,057,161 |
+| M4 | 13,074,913 | 13,074,913 |
 
-M4 has 56% more parameters than M3 at the same width. If M4 beats M3 in Phase 3, that alone cannot separate "recurrence helps" from "more parameters help". Proposed control for hypothesis H2: also run M3 at `base = 40`, which matches M4's size to within 0.3%. Decision for Roles 2 and 4 and the lead before Phase 3; it costs one extra M3 run per fold.
+M4's size does not depend on T (the encoder is shared across frames); M3's first layer grows with T x C. M4 has 56% more parameters than M3 at the same width, so "M4 beats M3" cannot by itself separate recurrence from capacity. The size-matched M3 (`base = 40`, within 0.1% of M4) is predeclared in `configs/temporal_unet.yaml` (`ablation.m3_size_matched_base`) and is run only if M4 beats M3.
+
+The Phase 2 numbers (C = 35) are superseded; Role 4's audit removed 28 channels.
+
+## Frame and channel order (P3-R3-01)
+
+- Frames: oldest first, newest last; the target is the day after the newest frame. Checked on every sample by `validate_sample` (consecutive dates, target = last + 1, target not among the inputs).
+- Channels per frame, in this order: `viirs_m11, viirs_i2, viirs_i1, slope, aspect, elevation, binary_active_fire_mask`. Recorded in the config, in every checkpoint (`channels`) and in every exported forecast record.
+- M3 flattens `[T, C]` to `T*C` input planes frame-major: plane `t*C + c` is channel c of frame t.
+
+## Training procedure (implemented, not yet run on WSTS)
+
+`ml/src/fireguard_ml/training/temporal_trainer.py::train_fold`, one call per (model, T, seed, fold):
+
+1. Verify `p1_split_hashes.txt` says FROZEN and that the manifest's SHA-256 matches; validate the manifest; check the channels against the register.
+2. Take train / validation events from the manifest and samples from `wsts_eval_samples.csv` (the same rows as M1).
+3. Fit the normaliser on training samples only.
+4. Train with AdamW, masked BCE + Dice identical to Role 2's `masked_bce_dice_loss` (Role 2's function is imported when installed; otherwise a verbatim copy, tested equal), batch 1 with gradient accumulation 4, AMP on CUDA, seeded shuffling.
+5. After each epoch score every validation sample full-frame (pooled AUPRC with Role 4's streaming histogram); early-stop on it.
+6. Restore the best epoch; fit the F1 threshold and the Platt calibrator on validation through Role 4's isolation API.
+7. Write the checkpoint, normaliser, selection, per-epoch log and run summary (hardware, time, peak memory, hashes).
+
+The test split is never loaded during training; a test wraps the source and asserts that.
 
 ## Constraints
 - H and W must be multiples of 32 (depth 5). Pad first; crop with `predict(..., orig_hw=...)`.

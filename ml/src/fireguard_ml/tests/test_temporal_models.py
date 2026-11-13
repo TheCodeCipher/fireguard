@@ -133,7 +133,7 @@ def test_strict_config_is_consistent_with_the_models():
     assert cfg["strict"] is True
     assert cfg["data"]["geometric_augmentation"] is False
     assert cfg["data"]["frame_order"] == "oldest_to_newest"
-    # processed loader indices of the five forecast channels (docs/wsts_data_dictionary.md)
+    # processed loader indices of the five forecast channels (docs/data_dictionary.md)
     assert cfg["data"]["excluded_processed_indices"] == [33, 34, 35, 36, 37]
     assert cfg["training"]["enabled"] is False  # Phase 2 delivers interfaces, not training runs
     t = cfg["data"]["n_leading_observations"]
