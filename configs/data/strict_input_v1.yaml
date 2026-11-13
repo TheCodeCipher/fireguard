@@ -1,0 +1,40 @@
+# FireGuard strict model-input data contract, version 1 (Role 1, P3-R1-02).
+# Code: ml/src/fireguard_ml/data/wsts_dataset.py (DATA_CONTRACT_VERSION = wsts_strict_input_v1).
+# Channel decisions come from Role 4's register docs/leakage_audit.csv; this file must agree with it
+# (test_wsts_dataset::test_strict_indices_agree_with_the_leakage_register).
+
+version: wsts_strict_input_v1
+pinned_loader:
+  repo: https://github.com/SebastianGer/WildfireSpreadTS
+  commit: f62dc49f2c2a6d249c071533ae5340c0d01bfb95
+dataset:
+  record: https://zenodo.org/records/8006177   # v1.0, 607 events, 13,607 GeoTIFFs
+  layout: "<root>/<year>/<event_id>/<YYYY-MM-DD>.tif"
+  grid: {crs: EPSG:32610, pixel_m: 375, bands: 23, dtype: float32}
+
+channels:   # loader order; processed index = index in the 40-channel processed tensor
+  - {name: viirs_m11, raw_band: 0, processed: 0, transform: none, units: "VNP09GA reflectance as stored (scaled values, e.g. 857-6694 for M11 on 2018-01-06; scale factor not re-verified)", nodata: NaN -> fold train mean}
+  - {name: viirs_i2, raw_band: 1, processed: 1, transform: none, units: "VNP09GA reflectance as stored (scaled values, e.g. 857-6694 for M11 on 2018-01-06; scale factor not re-verified)", nodata: NaN -> fold train mean}
+  - {name: viirs_i1, raw_band: 2, processed: 2, transform: none, units: "VNP09GA reflectance as stored (scaled values, e.g. 857-6694 for M11 on 2018-01-06; scale factor not re-verified)", nodata: NaN -> fold train mean}
+  - {name: slope, raw_band: 12, processed: 12, transform: none, units: "degrees (ee.Terrain.slope on SRTM)", nodata: NaN -> fold train mean}
+  - {name: aspect, raw_band: 13, processed: 13, transform: "sin(deg2rad(aspect))", units: "unitless [-1, 1]; source degrees 0=N 90=E 180=S 270=W (ee.Terrain.aspect)", nodata: NaN -> 0, standardised: false}
+  - {name: elevation, raw_band: 14, processed: 14, transform: none, units: "metres (SRTM)", nodata: NaN -> fold train mean}
+  - {name: binary_active_fire_mask, raw_band: 22, processed: 39, transform: "NaN->0; floor(HHMM/100); > 0", units: "0/1", nodata: "none (NaN means no detection)", standardised: false}
+
+target: {raw_band: 22, day: "D+1", rule: "NaN -> 0; > 0", dtype: uint8}
+sequence: {order: oldest_to_newest, consecutive_days: true, first_scored_target_index: 5, T_primary: 5, T_ablation: 3}
+valid_mask: "every native cell is valid (as the pinned loader scores every cell); padding cells invalid"
+padding: {where: bottom_right, multiple: 32, transform_changes: false}
+spatial_transforms: none   # no crop, flip or rotation
+standardisation: "fold-specific, train groups only (training/normalization.py)"
+
+excluded:   # enforced by the register and by assert_strict_channels
+  - ndvi, evi2                                  # Level A FAIL
+  - total_precipitation, wind_speed, wind_direction, minimum_temperature, maximum_temperature,
+    energy_release_component, specific_humidity # GRIDMET: Level A UNKNOWN (EE check 5)
+  - palmer_drought_severity_index               # Level A UNKNOWN
+  - land_cover_class (all 17 one-hot planes)    # year-Y MODIS, Level A FAIL
+  - gfs_* (processed 33-37)                     # Level A UNKNOWN; benchmark-assumption only
+  - active_fire_time (processed 38)             # HHMM encoding unresolved
+
+aspect_sin_cos: PROPOSED_NOT_APPROVED   # schema stays 40 processed / 7 strict until approval is recorded

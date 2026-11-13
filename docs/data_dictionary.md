@@ -480,3 +480,97 @@ These findings are descriptive and event-specific. They do not establish the cau
 - `wsts_cross_event_missingness_2019_2021.csv`
 - `wsts_cross_event_missingness_summary_2019_2021.csv`
 - `wsts_cross_event_mask_relationships_2019_2021.csv`
+
+## 12. Phase 3 verification and strict input contract (2026-11-13)
+
+### 12.1 Pinned loader and source lines (P3-R1-01)
+
+Pinned: `SebastianGer/WildfireSpreadTS` @ `f62dc49f2c2a6d249c071533ae5340c0d01bfb95`, file
+`src/dataloader/FireSpreadDataset.py`, plus Role 1's one-line local patch
+(`docs/wsts_baseline_local_patch.diff`, `T_co` TypeVar; needed for current PyTorch).
+
+| Semantics | Source lines |
+|---|---|
+| Files of an event sorted by name (= by date) | 225-232 |
+| Samples per event = files - `n_leading_observations` | 247-277 |
+| Inputs = `n` consecutive files, target = band 23 of the next file | 136-158 |
+| Active-fire input NaN -> 0, HHMM -> `floor(HHMM/100)` | 322, 326 |
+| Target NaN -> 0, then `> 0` | 323, 328 |
+| Evaluation centre-crop to a multiple of 32 (not used by FireGuard) | 335, 434-452 |
+| `sin(deg2rad())` on raw bands 7, 13, 19 | 339-340; `utils.py` 162 |
+| Binary active-fire mask from the processed active-fire band, appended | 343, 348 |
+| Standardisation, then `nan_to_num(0)` | 345, 351 |
+| Land cover -> 17 one-hot planes in place of band 16 | 353-361 |
+
+**Loader-level reproduction: PASS.** `scripts/verify_against_pinned_loader.py` runs the real pinned
+loader (evaluation mode) and rebuilds every sample with FireGuard's
+`fireguard_ml.data.wsts_dataset.process_raw` plus the loader's own statistics, `nan_to_num` and
+centre crop. On 3 complete real events (`fire_21458798`, `fire_24461930`, `fire_24461965`):
+36 samples at T=1 and 24 at T=5, all 40 channels identical to 6e-8 (float rounding), 0 target
+cells different. Evidence: `docs/evidence/role1/loader_reproduction.json`. This reproduces the
+loader's sample construction, not the paper's training results.
+
+**The 23 -> 40 mapping (section 4) is verified** by that comparison: every one of the 40 processed
+channels matches at its documented index.
+
+### 12.2 Discrepancies and quirks found (recorded, not silently changed)
+
+| # | Finding | Effect on FireGuard |
+|---|---|---|
+| 1 | Land cover NaN becomes 0 before the one-hot lookup, so class index -1 selects the **last** class (water) | None: land cover is excluded. Reproduced as-is for parity |
+| 2 | The binary input mask is computed **after** `floor(HHMM/100)`, so a detection at 00:00-00:59 UTC becomes hour 0 and is missing from the input mask, while the same detection is a positive target | Strict input affected only if such detections exist. Count: 0 of 10,971 detected pixels in the 4 audited events; dataset-wide count is in `phase3_data_release.json` after the full run. Reproduced as-is for parity |
+| 3 | GFS precipitation band 18 is named `total_precipitation_surface_sum` before the creation code's 2019-11-07 change and `..._last` after it (seen in the files themselves) | None for strict inputs; confirms Role 3's GFS audit. The reader accepts both names |
+| 4 | `docs/wsts_baseline_local_patch.diff` is committed with CRLF line endings; `git apply` rejects it on a LF checkout | Apply with `git apply --ignore-whitespace` or convert to LF; consider `*.diff text eol=lf` in `.gitattributes` |
+| 5 | The loader pairs files by position, not by date | No effect on WSTS: all 10,572 scored samples have target = last input + 1 day (Role 3 check). FireGuard's reader pairs by date and refuses gaps |
+
+### 12.3 First scored target and sequence
+
+First scored target = image index 5 of each event (`data/manifests/wsts_eval_samples.csv`,
+10,572 samples). This equals the loader with `n_leading_observations = 5` and, for T < 5, the
+loader's `n_leading_observations_test_adjustment = 5`. M1 (T=1), M3/M4 (T=5) and the T=3 ablation
+score identical rows.
+
+### 12.4 Strict input contract `wsts_strict_input_v1` (P3-R1-02)
+
+Machine-readable: `configs/data/strict_input_v1.yaml`. Level A / Level B from Role 4's register.
+
+| Channel | Source product | Raw band (0-based) | Processed index | Transformation | dtype | Units | Missing values | Level A | Level B |
+|---|---|---:|---:|---|---|---|---|---|---|
+| viirs_m11 | VNP09GA (VIIRS) | 0 | 0 | none | float32 | reflectance as stored (scaled) | NaN -> fold train mean | PASS | UNKNOWN |
+| viirs_i2 | VNP09GA | 1 | 1 | none | float32 | as above | NaN -> fold train mean | PASS | UNKNOWN |
+| viirs_i1 | VNP09GA | 2 | 2 | none | float32 | as above | NaN -> fold train mean | PASS | UNKNOWN |
+| slope | SRTM (`ee.Terrain.slope`) | 12 | 12 | none | float32 | degrees | NaN -> fold train mean | PASS | PASS |
+| aspect | SRTM (`ee.Terrain.aspect`) | 13 | 13 | `sin(deg2rad(a))`, not standardised | float32 | unitless [-1, 1] | NaN -> 0 | PASS | PASS |
+| elevation | SRTM | 14 | 14 | none | float32 | metres | NaN -> fold train mean | PASS | PASS |
+| binary_active_fire_mask | VIIRS active fire (derived) | 22 | 39 | NaN->0, floor(HHMM/100), > 0; not standardised | float32 | 0/1 | none | PASS | UNKNOWN |
+
+Aspect convention: `ee.Terrain.aspect` returns degrees with 0 = N, 90 = E, 180 = S, 270 = W
+(Earth Engine API reference). Under `sin`, east-facing = +1, west-facing = -1, and north- and
+south-facing both = 0; 30 and 150 degrees are indistinguishable. Tests pin this behaviour, the
+wrap-around (359.9 vs 0.1) and nodata. Whether WSTS's resampling to 375 m preserves the convention
+is not verified. The sin/cos proposal stays **not approved**; the schema is unchanged.
+
+Valid mask: every native cell (the pinned loader scores every cell; Role 4's baselines do the
+same). Padding to a multiple of 32 is bottom/right only, so the affine transform is unchanged;
+padded cells are invalid. No crop, flip or rotation.
+
+Excluded and enforced (register + `assert_strict_channels` + tests): NDVI, EVI2, all GRIDMET
+channels, PDSI, year-Y land cover (all 17 planes), GFS 33-37, `active_fire_time`.
+
+### 12.5 Terrain QA (P3-R1-03)
+
+On the 4 audited events, slope, aspect and elevation are bit-identical on every day of each event
+(max change 0.0) with no missing values; ranges slope 0-42.7 degrees, aspect 0-359.8, elevation
+25-2,602 m. The VIIRS reflectance bands are missing on 9.1 % of cells in `fire_25294983` (= 1/11, consistent with one whole
+day of 11) and below 0.02 % elsewhere; the fold normaliser imputes them. The dataset-wide table is `docs/evidence/role1/terrain_qa.csv` after
+`scripts/build_phase3_data_release.py` runs on the full dataset. No external DEM is proposed: no
+gap has been measured. No pre-event land-cover source is proposed.
+
+### 12.6 Dataset interface (P3-R3/R2 consumers)
+
+`fireguard_ml.data.wsts_dataset.WSTSTemporalSource(data_root, channels, T, samples_csv)` emits
+`TemporalSample(event_id, input_dates, target_date, x[T,C,H,W], y[H,W], valid[H,W], channels,
+transform, crs)` and satisfies Role 3's `TemporalSampleSource`; T=1 serves M1. Padding metadata:
+`padding_metadata(hw)`. The target day contributes band 23 only (tested by poisoning every other
+band of the target file). Evaluation-only observability is not produced by this source; Role 4's
+`EvaluationOnly` wrapper keeps any such product out of inputs.
