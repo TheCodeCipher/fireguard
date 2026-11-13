@@ -8,19 +8,31 @@ schema_version: 1
 strict: true
 
 data:
-  # Working candidate from plan v4 section 4.1. NOT yet confirmed by Role 1 / the lead.
+  # Primary context length (plan v4 4.1). T=3 is the predeclared ablation (see `ablation`).
   n_leading_observations: 5
   frame_order: oldest_to_newest
-  # Path to Role 4's frozen strict channel list. Not frozen yet -> null. c_strict is len(that list);
-  # never hard-code it (35 is only the upper bound before Role 4's leakage audit).
-  strict_channel_manifest: null
+  # Role 4's leakage register is the source of truth; this list must equal its strict channels
+  # in loader order (test_temporal_pipeline enforces it). c_strict = len(channels).
+  # If the aspect sin/cos proposal is approved, aspect becomes aspect_sin + aspect_cos here AND in
+  # the register in the same change; until then the schema stays as is.
+  strict_channel_manifest: docs/leakage_audit.csv
+  channels:
+    - viirs_m11
+    - viirs_i2
+    - viirs_i1
+    - slope
+    - aspect
+    - elevation
+    - binary_active_fire_mask
   # Loader (processed) indices that are always dropped: the five GFS channels.
   excluded_processed_indices: [33, 34, 35, 36, 37]
   pad_multiple: 32            # must equal 2 ** depth; padding utility is owned by Role 2
   geometric_augmentation: false
-  # Role 4's frozen P1 manifest and its hash. Fill both in once Gate 1 freezes them.
-  split_manifest: null
-  split_manifest_hash: null
+  # Role 4's frozen P1 manifest. The trainer re-hashes it against p1_split_hashes.txt (which must
+  # say status=FROZEN) on every run, so the hash is not duplicated here.
+  split_manifest: data/manifests/p1_loyo_fold_manifest.csv
+  split_hashes: data/manifests/p1_split_hashes.txt
+  eval_samples: data/manifests/wsts_eval_samples.csv
 
 models:
   m3:
@@ -33,9 +45,28 @@ models:
     depth: 5
     lstm_kernel: 3
 
+ablation:
+  # Predeclared before any result exists: first entry is the primary run, the rest are ablations.
+  context_lengths: [5, 3]
+  seeds: [0]                  # add seeds only if the M3-vs-M4 difference is inside bootstrap noise
+  # Parameter-matched control for H2: M3 at base 40 has 13.06 M parameters vs M4's 13.07 M
+  # (7 strict channels, T=5). Run it only if M4 beats M3, to separate recurrence from capacity.
+  m3_size_matched_base: 40
+
 training:
-  # Phase 2 delivers tested interfaces only. Training M3/M4 is Phase 3 and needs Gate 2 first.
+  # Pipeline implemented and tested on synthetic data. Stays false until Gate 2 (M1 beats the
+  # baselines) is recorded and Role 1's WSTS sample source exists (P3-R1-05).
   enabled: false
+  optimizer: adamw
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+  max_epochs: 15
+  patience: 3                 # epochs without validation AUPRC improvement
+  batch_size: 1               # 6 GB GPU; effective batch via accumulation
+  grad_accum: 4
+  amp: true
+  bce_weight: 1.0
+  dice_weight: 1.0
   loss: bce_dice_masked                         # Role 2's implementation; valid-pixel mask applied
   checkpoint_selection: val_auprc_full_frame    # natural prevalence, un-cropped frames
   seed: 0
