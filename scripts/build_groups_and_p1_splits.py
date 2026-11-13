@@ -39,17 +39,23 @@ from fireguard_ml.data.event_splits import (  # noqa: E402
     write_manifest,
 )
 from fireguard_ml.data.fire_complex_groups import (  # noqa: E402
+    CELL_ROW_FACTOR,
+    FOOTPRINT_RULE_VERSION,
+    PIXEL_M,
     PRIMARY_RULE,
     SENSITIVITY_RULE,
     Event,
     any_warning,
     group_events,
+    own_fire_cells,
+    persistent_cells,
     yearly_largest_share,
 )
 
 MANIFESTS = REPO / "data" / "manifests"
 DOCS = REPO / "docs"
 SEED = 0
+CLEANING: dict = {}  # filled by load_events; reported in diagnostics
 
 
 def load_events(allow_proxy: bool) -> tuple[list[Event], str, int]:
@@ -74,17 +80,42 @@ def load_events(allow_proxy: bool) -> tuple[list[Event], str, int]:
                 f"footprints missing for {len(missing)} events, e.g. {sorted(missing)[:3]}"
             )
         unreadable = sum(int(r["tiffs_unreadable"]) for r in fps.values())
-        events = []
+        from pyproj import Transformer
+
+        to_lonlat = Transformer.from_crs(32610, 4326, always_xy=True)
+        year_of = {ev: int(m["year"]) for ev, m in meta.items()}
+        excluded = persistent_cells(cells, year_of)
+        events, kept_share = [], []
         for ev, m in sorted(meta.items()):
             fp = fps[ev]
-            if int(fp["fire_cell_count"]) > 0:
+            own = own_fire_cells(
+                cells.get(ev, ()), (float(m["center_x"]), float(m["center_y"])), excluded
+            )
+            if own:
+                # Dates: first/last day with any detection in the image (raw footprint run).
+                # They can include a neighbouring fire's days, which only widens the interval
+                # and therefore only ever adds groupings (conservative).
                 start = date.fromisoformat(fp["fire_first_date"])
                 end = date.fromisoformat(fp["fire_last_date"])
-                lon, lat = float(fp["footprint_centroid_lon"]), float(fp["footprint_centroid_lat"])
+                ids = np.fromiter(own, dtype=np.int64)
+                x = float(((ids % CELL_ROW_FACTOR) + 0.5).mean() * PIXEL_M)
+                y = float(((ids // CELL_ROW_FACTOR) + 0.5).mean() * PIXEL_M)
+                lon, lat = to_lonlat.transform(x, y)
+                kept_share.append(len(own) / max(len(cells.get(ev, ())), 1))
             else:  # no detected fire: fall back to the image sequence and the frame centre
                 start, end = date.fromisoformat(m["first_date"]), date.fromisoformat(m["last_date"])
                 lon, lat = _frame_centre_lonlat(m)
-            events.append(Event(ev, int(m["year"]), start, end, lon, lat, cells.get(ev)))
+            events.append(Event(ev, int(m["year"]), start, end, lon, lat, own or None))
+        CLEANING.update(
+            {
+                "footprint_rule": FOOTPRINT_RULE_VERSION,
+                "persistent_cells_removed": len(excluded),
+                "events_with_own_fire": len(kept_share),
+                "median_share_of_raw_cells_kept": float(np.median(kept_share))
+                if kept_share
+                else None,
+            }
+        )
         return events, "footprints", unreadable
 
     if not allow_proxy:
@@ -235,7 +266,8 @@ def main(argv: list[str] | None = None) -> int:
     lines = [
         "# FireGuard P1 split hashes. SHA-256 with CRLF normalised to LF (binary files as-is).",
         f"# status={status} grouping_input={source} rule={chosen.rule_km:g}km/{chosen.rule_days}d "
-        f"linkage={chosen.linkage} validation_target={VALIDATION_TARGET} seed={SEED}",
+        f"linkage={chosen.linkage} validation_target={VALIDATION_TARGET} seed={SEED} "
+        f"footprint_rule={CLEANING.get('footprint_rule', 'none')}",
     ]
     lines += [f"{sha256_file(p)}  {p.name}" for p in hashed]
     if cells.exists():
@@ -247,6 +279,7 @@ def main(argv: list[str] | None = None) -> int:
     diagnostics = {
         "status": status,
         "grouping_input": source,
+        "footprint_cleaning": CLEANING,
         "tiffs_unreadable": unreadable,
         "events": len(events),
         "eval_samples": n_samples,
@@ -347,6 +380,16 @@ def render_report(d: dict, events, chosen) -> str:
         f"{d['tiffs_unreadable']}, events: {d['events']}).",
         "",
     ]
+    cl = d.get("footprint_cleaning") or {}
+    if cl:
+        parts += [
+            f"**Footprint rule {cl['footprint_rule']}:** {cl['persistent_cells_removed']} "
+            "persistent thermal-anomaly cells (seen in events from 3+ different years) removed; "
+            "each event keeps only its own fire clusters (within 5 km of the image centre); median "
+            f"share of raw cells kept {cl['median_share_of_raw_cells_kept']:.1%}. See "
+            "`docs/fire_complex_groups.md` section 3a.",
+            "",
+        ]
     if d["status"] != "FROZEN":
         parts += [
             "> **PROVISIONAL.** These groups were built without real fire footprints, so the "

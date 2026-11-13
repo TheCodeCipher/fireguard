@@ -139,3 +139,60 @@ def test_group_ids_are_deterministic_and_input_order_independent():
 def test_duplicate_event_ids_are_rejected():
     with pytest.raises(ValueError, match="duplicate"):
         group_events([ev("a"), ev("a", 100)])
+
+
+# --- footprint cleaning (rule v2) -------------------------------------------------------------
+
+from fireguard_ml.data.fire_complex_groups import (  # noqa: E402
+    CELL_ROW_FACTOR,
+    PIXEL_M,
+    own_fire_cells,
+    persistent_cells,
+)
+
+
+def cid(row: int, col: int) -> int:
+    return row * CELL_ROW_FACTOR + col
+
+
+def centre_of(row: int, col: int) -> tuple[float, float]:
+    return ((col + 0.5) * PIXEL_M, (row + 0.5) * PIXEL_M)
+
+
+def test_cells_seen_in_three_years_are_persistent_two_years_are_not():
+    hot, reburn = cid(10, 10), cid(20, 20)
+    cells = {"a": {hot, reburn}, "b": {hot, reburn}, "c": {hot}, "d": {cid(5, 5)}}
+    years = {"a": 2018, "b": 2019, "c": 2020, "d": 2021}
+    assert persistent_cells(cells, years) == frozenset({hot})
+
+
+def test_own_fire_keeps_the_central_cluster_and_drops_a_distant_neighbour():
+    central = {cid(1000, 1000 + k) for k in range(5)}
+    far = {cid(1000, 1100 + k) for k in range(5)}  # 100 cells = 37.5 km away
+    kept = own_fire_cells(central | far, centre_of(1000, 1002))
+    assert kept == frozenset(central)
+
+
+def test_gaps_up_to_two_cells_stay_in_one_cluster_but_are_not_filled():
+    a = {cid(0, 0), cid(0, 1)}
+    b = {cid(0, 4), cid(0, 5)}  # two empty cells in between: bridged
+    c = {cid(0, 50)}  # far: a separate cluster beyond 5 km? 50 cells = 18.75 km
+    kept = own_fire_cells(a | b | c, centre_of(0, 0))
+    assert kept == frozenset(a | b)  # bridged clusters kept, gap cells not invented
+
+
+def test_persistent_cells_are_removed_before_clustering():
+    hot = cid(0, 0)
+    fire = {cid(0, 3), cid(0, 4)}
+    kept = own_fire_cells(fire | {hot}, centre_of(0, 0), excluded=frozenset({hot}))
+    assert kept == frozenset(fire)
+
+
+def test_when_no_cluster_is_near_the_centre_the_nearest_one_is_kept():
+    near_ish = {cid(0, 30)}  # 11.25 km
+    far = {cid(0, 90)}  # 33.75 km
+    assert own_fire_cells(near_ish | far, centre_of(0, 0)) == frozenset(near_ish)
+
+
+def test_empty_footprint_stays_empty():
+    assert own_fire_cells([], (0.0, 0.0)) == frozenset()

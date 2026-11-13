@@ -1,0 +1,53 @@
+{
+  "split_manifest_sha256": "34e2909009ad3bb7f5aefb3ad9b5c02ec1df4c776eb2c5bf02eaf68f098e6976",
+  "evaluation_config_sha256": "a01fdd6d5c56562ffde64ed2e1ca0584df623ba5beddcf945284f1b3dfd1627e",
+  "strongest_baseline_by_validation_auprc": {
+    "2018": "distance_decay",
+    "2019": "distance_decay",
+    "2020": "distance_decay",
+    "2021": "distance_decay"
+  },
+  "baseline_validation_auprc": {
+    "2018": {
+      "distance_decay": 0.26253546683767326,
+      "climatology": 0.25271411524192045
+    },
+    "2019": {
+      "distance_decay": 0.3138892759790255,
+      "climatology": 0.3045749075962963
+    },
+    "2020": {
+      "distance_decay": 0.3115286206260806,
+      "climatology": 0.3014643242774057
+    },
+    "2021": {
+      "distance_decay": 0.2711126479092769,
+      "climatology": 0.2612227922011552
+    }
+  },
+  "gate2": {
+    "decision": "NOT_RUN"
+  },
+  "gate3": {
+    "m3_stacked_unet vs m1_unet": {
+      "adds": "temporal context (5 days, stacked)",
+      "decision": "NOT_RUN"
+    },
+    "m4_convlstm_unet vs m3_stacked_unet": {
+      "adds": "recurrence (ConvLSTM)",
+      "decision": "NOT_RUN"
+    },
+    "m4_convlstm_unet vs m3_stacked_unet_base40": {
+      "adds": "recurrence at matched capacity (control)",
+      "decision": "NOT_RUN"
+    },
+    "m1_unet vs m2_unet_no_terrain": {
+      "adds": "terrain channels (M1 with vs M2 without)",
+      "decision": "NOT_RUN"
+    }
+  },
+  "context_ablation_T3_vs_T5": {
+    "decision": "NOT_RUN"
+  },
+  "models_supplied": []
+}

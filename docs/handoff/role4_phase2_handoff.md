@@ -2,7 +2,7 @@
 
 - Member name: (fill in)
 - Assigned role: Role 4, Research / Evaluation / Explainability Engineer
-- Phase completed: Phase 2 (CODE COMPLETE; results pending the baseline run on frozen manifests, see section 6)
+- Phase completed: Phase 2 (DONE: baselines run on the FROZEN v2 manifests, `docs/baseline_results.md`)
 - Branch: `role-4/ml/evaluation-protocol` (suggested)
 - Date: 2026-11-13
 - Branch / PR links: (fill in)
@@ -36,7 +36,7 @@
 | Pooled and event-macro reported | runner | PASS | `docs/baseline_results.md` layout |
 | Bootstrap unit is event group | `pytest -k bootstrap` | PASS (test fails if events are resampled individually) | `test_bootstrap_resamples_whole_groups_not_events` |
 | Observability evaluation-only and blocked from inputs | `pytest -k observability` | PASS | `test_observability_not_input.py` |
-| Per-year/per-fold tables with 2019 caveat | runner output | PASS (layout); real numbers pending | report template |
+| Per-year/per-fold tables with 2019 caveat | runner output | PASS | `docs/baseline_results.md` (decay test AUPRC 0.3484 / 0.2256 / 0.3111 / 0.3959 for 2018-2021) |
 | Real-data check | 3 real events staged from the archive, run end to end and recomputed pixel by pixel with scikit-learn | PASS: AP 0.050434, Brier 0.006913, dilated F1 0.110833 identical both ways | session log |
 
 ## 2a. Deviations from the brief, stated for the reviewer
@@ -45,6 +45,7 @@
 | Distance decay scale fitted on train/validation | Scale chosen by validation **Brier**, not AUPRC; amplitude added | AUPRC is identical for every scale (monotone transform); without an amplitude every burning cell scores 1.0 although only ~10 % reburn next day, which wrecked Brier (BSS -1.97 vs +0.03 after the fix on the real-data check) |
 | Binary baselines "for F1/IoU" | No AUPRC is reported for them at all | A 0/1 map has one operating point; its AUPRC is degenerate |
 | Pixel-level metric arrays | Counts grouped by distinct score; streaming histogram for model outputs | A test fold is ~300 M cells; exact pooling without holding pixels in memory |
+| (defect fixed 2026-11-13) | Distances compared in integer key space (`distance_keys`) | Rounding made the 375 m neighbour key 38 (0.38 km), so the dilated baseline equalled plain persistence and the first climatology bin was empty. Regression tests added; results regenerated |
 
 ## 3. Dataset and source decisions
 - Verified: baseline inputs use only the day-D active-fire band (Level A PASS); target is day D+1 binarised as in the loader.
@@ -60,10 +61,9 @@
 ## 5. Open issues and blockers
 | Issue | Impact | Owner | Due date |
 |---|---|---|---|
-| Run `scripts/run_baselines.py` after the P1 manifests are frozen | No baseline numbers until then | Role 4 | End of Week 3 |
 | Role 2 must emit per-event scores in the contract format | Needed for the Gate 2 paired bootstrap | Role 2 | Gate 2 |
 | Optional logistic regression / boosting baseline | Optional | Role 4 | if time |
 
 ## 6. Phase sign-off
-- Role-specific acceptance: **CODE COMPLETE, RESULTS PENDING**. Every acceptance test passes on synthetic data and on a three-event real-data check; the per-fold results table is produced by one command once the manifests are frozen: `python scripts/run_baselines.py --data-root <WSTS folder>`.
+- Role-specific acceptance: **PASS**. Baselines run on the frozen v2 manifests; decay beats climatology in every fold (paired group bootstrap, 95 % CI excludes 0), the reference M1 must beat at Gate 2.
 - Global gate impact: CARRY-OVER into Gate 2 (Role 2's M1 comparison needs `docs/baseline_results.md`).

@@ -78,7 +78,15 @@ def fit_platt(
         raise ValueError("calibration needs both positives and negatives")
     x = _logit(counts.scores)
     w_pos, w_neg = counts.pos.astype(float), counts.neg.astype(float)
+
+    def nll(a_: float, b_: float) -> float:
+        z = a_ * x + b_
+        # -sum w_pos*log(sigmoid(z)) + w_neg*log(1-sigmoid(z)), computed stably
+        return float(np.sum(w_pos * np.logaddexp(0.0, -z) + w_neg * np.logaddexp(0.0, z)))
+
     a, b = 1.0, 0.0
+    cur = nll(a, b)
+    converged = False
     for _ in range(max_iter):
         p = 1.0 / (1.0 + np.exp(-(a * x + b)))
         w = w_pos + w_neg
@@ -87,9 +95,24 @@ def fit_platt(
         h = w * p * (1 - p)
         hess = np.array([[np.sum(h * x * x), np.sum(h * x)], [np.sum(h * x), np.sum(h)]])
         step = np.linalg.solve(hess + 1e-9 * np.eye(2), np.array([g_a, g_b]))
-        a, b = a + step[0], b + step[1]
-        if np.max(np.abs(step)) < 1e-10:
+        # Backtracking: plain Newton overshoots on heavily tied scores (e.g. many exact zeros),
+        # which once drove the slope to 1e18 on the distance-decay baseline.
+        t_ = 1.0
+        while t_ > 1e-8:
+            na, nb = a + t_ * step[0], b + t_ * step[1]
+            new = nll(na, nb)
+            if np.isfinite(new) and new <= cur:
+                break
+            t_ /= 2
+        else:
+            converged = True  # no descent direction left
             break
+        a, b, prev, cur = na, nb, cur, new
+        if abs(prev - cur) <= 1e-10 * max(1.0, abs(cur)) or np.max(np.abs(t_ * step)) < 1e-10:
+            converged = True
+            break
+    if not (converged and np.isfinite(a) and np.isfinite(b) and abs(a) < 1e3):
+        raise ValueError(f"Platt fit did not converge to a usable calibrator (a={a}, b={b})")
     return FoldCalibrator(protocol, fold, float(a), float(b))
 
 

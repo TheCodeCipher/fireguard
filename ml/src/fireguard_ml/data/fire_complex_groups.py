@@ -16,8 +16,20 @@ Groups are formed in one of two ways:
   greedily and deterministically (events ordered by start date, then event id; each event joins
   the earliest-created group whose every member it is related to, otherwise it starts a new group).
 
-This module is pure Python + NumPy and does no file I/O, so it can be unit-tested on synthetic
-events. Real footprints are produced by ``scripts/derive_event_footprints.py``.
+Footprint cleaning (rule v2, 2026-11-13). The raw footprint of an event is every active-fire cell
+anywhere in its ~90 x 115 km image, which also contains neighbouring fires and permanent thermal
+anomalies. Two evidence-based steps make it the event's own fire:
+
+* ``persistent_cells``: cells detected in events from at least ``min_years`` (3) different years.
+  A wildfire does not burn the same 375 m cell in three of four years; these are industrial or
+  other static heat sources. On the real archive: 134 cells, nine of them in all four years.
+* ``own_fire_cells``: keep the fire clusters (cells bridged across gaps of up to 2 cells, i.e.
+  750 m) that come within ``near_km`` (5 km) of the image centre. WSTS images are centred on their
+  event: 95.9 % of events have a cluster within 5 km of the centre (median 0.27 km), and the next
+  distances jump beyond 40 km. If no cluster is that close, the nearest cluster is kept.
+
+This module is pure Python + NumPy/SciPy and does no file I/O, so it can be unit-tested on
+synthetic events. Raw footprints are produced by ``scripts/derive_event_footprints.py``.
 """
 
 from __future__ import annotations
@@ -29,7 +41,14 @@ from dataclasses import dataclass, field
 from datetime import date
 
 import numpy as np
+from scipy import ndimage
 
+PIXEL_M = 375.0
+CELL_ROW_FACTOR = 100_000  # cell id = row * 100000 + col (see derive_event_footprints.py)
+PERSISTENT_MIN_YEARS = 3
+OWN_FIRE_BRIDGE_CELLS = 2
+OWN_FIRE_NEAR_KM = 5.0
+FOOTPRINT_RULE_VERSION = "v2_own_fire_no_persistent"
 EARTH_RADIUS_KM = 6371.0088
 PRIMARY_RULE = (30.0, 14)
 SENSITIVITY_RULE = (50.0, 30)
@@ -57,6 +76,56 @@ class Event:
     def __post_init__(self) -> None:
         if self.end < self.start:
             raise ValueError(f"{self.event_id}: end {self.end} is before start {self.start}")
+
+
+def persistent_cells(
+    cells_by_event: dict[str, Iterable[int]],
+    year_of: dict[str, int],
+    min_years: int = PERSISTENT_MIN_YEARS,
+) -> frozenset[int]:
+    """Cells that appear in footprints of events from at least ``min_years`` distinct years."""
+    years: dict[int, set[int]] = defaultdict(set)
+    for ev, cells in cells_by_event.items():
+        for c in cells:
+            years[int(c)].add(year_of[ev])
+    return frozenset(c for c, ys in years.items() if len(ys) >= min_years)
+
+
+def own_fire_cells(
+    cells: Iterable[int],
+    frame_center_xy: tuple[float, float],
+    excluded: frozenset[int] = frozenset(),
+    bridge_cells: int = OWN_FIRE_BRIDGE_CELLS,
+    near_km: float = OWN_FIRE_NEAR_KM,
+) -> frozenset[int]:
+    """The event's own fire: clusters within ``near_km`` of the image centre, minus ``excluded``.
+
+    ``frame_center_xy`` is the image centre in EPSG:32610 metres (Role 1's ``center_x``,
+    ``center_y``). Clusters are 8-connected after bridging gaps of up to ``bridge_cells`` cells;
+    the bridge only decides membership, it never adds cells.
+    """
+    c = np.array(sorted(set(int(x) for x in cells) - excluded), dtype=np.int64)
+    if c.size == 0:
+        return frozenset()
+    row, col = c // CELL_ROW_FACTOR, c % CELL_ROW_FACTOR
+    r0, c0 = row.min(), col.min()
+    grid = np.zeros((row.max() - r0 + 1, col.max() - c0 + 1), dtype=bool)
+    grid[row - r0, col - c0] = True
+    bridged = ndimage.binary_dilation(grid, iterations=bridge_cells) if bridge_cells else grid
+    labels, n = ndimage.label(bridged, structure=np.ones((3, 3)))
+    lab = labels[row - r0, col - c0]
+    dist_km = (
+        np.hypot(
+            (col + 0.5) * PIXEL_M - frame_center_xy[0], (row + 0.5) * PIXEL_M - frame_center_xy[1]
+        )
+        / 1000.0
+    )
+    nearest = np.full(n + 1, np.inf)
+    np.minimum.at(nearest, lab, dist_km)
+    keep = np.nonzero(nearest[1:] <= near_km)[0] + 1
+    if keep.size == 0:
+        keep = np.array([int(np.argmin(nearest[1:])) + 1])
+    return frozenset(c[np.isin(lab, keep)].tolist())
 
 
 def haversine_km(lon1: float, lat1: float, lon2: float, lat2: float) -> float:

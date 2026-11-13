@@ -78,7 +78,10 @@ poorly-observed strata and report metrics per stratum with coverage. It is infor
 target day, so it must never enter a model input, feature selection or readiness signal.
 `fireguard_ml.data.observability.assemble_model_inputs` rejects it by type and by name, and
 `test_observability_not_input.py` fails if that guard is removed. Primary benchmark scores are
-never altered by observability.
+never altered by observability. Within WSTS the proxy is the share of D+1 cells whose M11, I2 and I1 reflectance
+values are present; VNP09GA QA flags (cloud, smoke) are not in the files, so cloudy-but-filled
+cells cannot be identified. The values live in `data/evaluation_only/` and a static test fails if
+any model-side module refers to them (`test_observability_is_evaluation_only.py`).
 
 ## 7. What a model owner hands to Role 4
 

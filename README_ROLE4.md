@@ -4,6 +4,38 @@ Everything in this folder uses the **same paths as the `fireguard` repository**.
 repo, copy the folder's contents (except this README) into the repository root on a Role 4 branch,
 for example `role-4/ml/evaluation-protocol`.
 
+## Phase 3 and Phase 4 (added 2026-11-13)
+
+New: comparison engine and gates (`evaluation/comparison.py`, `scripts/run_model_comparison.py`),
+locked protocol (`docs/model_comparison_protocol.md`), calibration report and a `fit_platt` fix,
+evaluation-only observability diagnostic, explanation status (UNAVAILABLE), independent OOF
+validation and the reveal package (`evaluation/oof_validation.py`, `evaluation/reveal.py`,
+`scripts/validate_oof_and_build_reveal.py`, `docs/reveal_contract.md`), gate log, hand-offs.
+Results in `reports/phase3/` are baseline-only; every model row says NOT RUN.
+
+One command still needs the dataset (10-15 minutes):
+`python scripts/run_observability_diagnostic.py --data-root <WSTS folder>`; commit
+`reports/phase3/observability_strata.csv`. Do **not** commit
+`data/evaluation_only/next_day_observability.csv` unless the team agrees (it is target-day data;
+keeping it out of the repo is the simplest guard). Phase 4 commands run after the real OOF export.
+
+## Update 2026-11-13: re-frozen split and a baseline fix (read first)
+
+1. **The P1 split was re-frozen.** The first frozen grouping over-grouped (one 64-event group,
+   399 test events in 2018) because persistent thermal anomalies and unrelated fires in the same
+   frame created false footprint overlaps. Footprint rule v2 removes cells seen in events from 3+
+   different years and keeps only each event's own fire. New manifest sha256:
+   `34e2909009ad3bb7f5aefb3ad9b5c02ec1df4c776eb2c5bf02eaf68f098e6976`. Details and evidence:
+   `docs/fire_complex_groups.md` section 3a. **Tell Role 1 and anyone who received the old hash.**
+2. **Baseline bug fixed.** A rounding error made the dilated baseline identical to persistence
+   and left the nearest climatology bin empty. Fixed in `baselines/distance_decay.py`, with
+   regression tests; `docs/baseline_results.md` regenerated on the v2 split.
+3. Re-run check: `cd ml; python -m pytest -q` (116 tests with the Role 4 files), then
+   `python scripts/run_baselines.py --data-root <WSTS folder>` only if you want to reproduce the
+   numbers (they are already in the files).
+
+The paragraph below describes the state before the freeze and is kept for history.
+
 ## Status in one paragraph
 
 All Role 4 Phase 1 and Phase 2 code, tests and documents are done (108 tests pass with the

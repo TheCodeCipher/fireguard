@@ -77,3 +77,22 @@ def test_paired_bootstrap_requires_identical_events_and_reports_nan_exclusions()
     assert r.excluded_events == 1
     with pytest.raises(ValueError, match="same events"):
         paired_group_bootstrap({"e1": 0.5}, ref, groups)
+
+
+def test_platt_converges_on_distance_decay_shaped_scores():
+    """Regression: plain Newton diverged (slope ~1e18) on the distance-decay baseline, whose
+    scores underflow to exactly 0 for most cells. Shape below reproduces that failure."""
+    from fireguard_ml.evaluation.metrics import ScoreCounts
+
+    d = np.arange(0, 200, 0.375)
+    s = np.append(0.4069 * np.exp(-d / 0.5), 0.0)
+    rate = np.append(0.4 * np.exp(-d / 2.0) + 2e-4, 1.2e-4)
+    tot = np.append(np.full(d.size, 100_000.0), 3.5e7)
+    pos = np.round(rate * tot)
+    o = np.argsort(-s, kind="stable")
+    c = ScoreCounts(s[o], pos[o].astype(np.int64), (tot - pos)[o].astype(np.int64))
+    cal = fit_platt(c, "P1", 2018, "validation")
+    assert np.isfinite(cal.a) and 0.1 < cal.a < 5
+    q = cal.transform(np.clip(c.scores, 1e-12, 1), 2018)
+    brier = lambda sc: float((c.pos * (1 - sc) ** 2 + c.neg * sc**2).sum() / c.n)  # noqa: E731
+    assert brier(q) <= brier(c.scores)

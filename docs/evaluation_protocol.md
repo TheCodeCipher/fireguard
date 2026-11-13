@@ -1,6 +1,6 @@
 # Evaluation protocol (P1, Phase 2 onward)
 
-- Owner: Role 4 | Updated: 2026-11-13
+- Owner: Role 4 | Updated: 2026-11-13 (Phase 3 rules locked)
 - Definitions: `docs/metrics_contract.md`. Splits: `docs/validation_protocols.md` section 15.
 
 ## Step by step, for every model and every baseline
@@ -17,8 +17,9 @@
 5. **Score the test groups once**, on the rows of `wsts_eval_samples.csv` for those events, with
    padding masked out.
 6. **Write per-event scores** in the contract format and the run config with all hashes.
-7. **Compare** against the strongest soft baseline of the same fold with the paired event-group
-   bootstrap.
+7. **Compare** against the strongest soft baseline of the same fold (chosen on validation AUPRC)
+   with the paired event-group bootstrap: `scripts/run_model_comparison.py`. The full locked rules
+   are in `docs/model_comparison_protocol.md`.
 
 ## Gate 2 rule (Plan v4)
 
@@ -26,6 +27,10 @@ M1 must match or beat the strongest soft baseline (distance decay or distance-bi
 AUPRC under P1, shown per fold with the paired bootstrap interval. If it does not, stop adding
 modules and diagnose target, channel timing, observability, class imbalance, padding and
 preprocessing first. A documented negative result is acceptable.
+
+Mechanical form (locked 2026-11-13): FAILS if any fold is significantly worse; BEATS if none is
+worse and at least two are significantly better; MATCHES otherwise
+(`docs/model_comparison_protocol.md` section 5).
 
 ## Baselines (implemented, `scripts/run_baselines.py`)
 
