@@ -1,0 +1,2 @@
+event_id,year,sample_index_within_event,input_file,target_file,input_observations,input_sequence,target_day,original_height,original_width,original_band_count,processed_input_shape,processed_target_shape,input_dtype,target_dtype,target_positive_pixels,target_positive_fraction,crs,resolution_m,loader_commit,metadata_status
+fire_21458798,2018,5,2018-01-06.tif,2018-01-07.tif,1,2018-01-06,2018-01-07,304,247,23,"(1, 40, 288, 224)","(288, 224)",torch.float32,torch.int64,10,0.00015500992063492063,EPSG:32610,375,f62dc49f2c2a6d249c071533ae5340c0d01bfb95,verified_sample
