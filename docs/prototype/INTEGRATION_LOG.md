@@ -132,3 +132,7 @@ stay in `origin/role2` history. Role 2's starter docs moved to `docs/role2/`.
 - `docs/data_dictionary.md` cites `data/manifests/wsts_2018_fire_21458798_active_fire_audit.csv`
   and `docs/validation_protocols.md` cites `data/manifests/p1_loyo_fold_schema.csv`; neither file
   was ever committed by its owner.
+- Two committed manifests are over 1 MB: `data/manifests/wsts_raster_grid_audit.csv` (6.8 MB,
+  Role 1) and `data/manifests/wsts_event_fire_cells.csv.gz` (1.7 MB, Role 4). Both are compact
+  derived manifests their owners committed, not raw data; kept. No raster, checkpoint, database,
+  `.env` or key is tracked (checked on the final commit).
