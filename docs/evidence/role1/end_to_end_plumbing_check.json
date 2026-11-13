@@ -1,0 +1,13 @@
+{
+  "date": "2026-11-13",
+  "what": "Real WSTS files -> Role 1 WSTSTemporalSource -> Role 3 train_fold (fold 2020) -> Role 3 export_oof -> Role 1 build_replay_catalogue",
+  "is_result": false,
+  "note": "Plumbing check only: 4 staged real events, M4 at base 8, 1 epoch, CPU. The model is untrained; its numbers mean nothing.",
+  "events": ["fire_21458798 (fold 2020 train)", "fire_25294983 (fold 2020 validation)", "fire_24461930, fire_24461965 (fold 2020 test)"],
+  "train_samples": 9,
+  "validation_samples": 6,
+  "oof_forecasts_exported": 15,
+  "catalogue_rows": 15,
+  "catalogue_rejected": 0,
+  "checks_passed": ["frozen-split hash", "strict channels vs register", "test events never loaded in training", "fold/checkpoint mapping", "GeoTIFF size/CRS/transform equal to the source frame", "checksums", "no target fields pre-reveal"]
+}
