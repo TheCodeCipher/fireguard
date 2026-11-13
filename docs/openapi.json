@@ -859,6 +859,11 @@
               }
             ],
             "title": "Checksum Sha256"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
           }
         },
         "type": "object",
@@ -1299,6 +1304,11 @@
             "type": "string",
             "title": "Time Safety Status"
           },
+          "provenance": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Provenance"
+          },
           "artifacts": {
             "items": {
               "$ref": "#/components/schemas/ArtifactDescriptor"
@@ -1457,6 +1467,16 @@
           "is_oof": {
             "type": "boolean",
             "title": "Is Oof"
+          },
+          "registry_status": {
+            "type": "string",
+            "title": "Registry Status",
+            "default": "published"
+          },
+          "is_mock": {
+            "type": "boolean",
+            "title": "Is Mock",
+            "default": false
           }
         },
         "type": "object",

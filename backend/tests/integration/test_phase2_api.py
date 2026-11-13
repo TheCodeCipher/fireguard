@@ -1,3 +1,4 @@
+import hashlib
 from datetime import date
 
 import pytest
@@ -23,6 +24,7 @@ def api_client(tmp_path, monkeypatch):
     (mock_dir / "actual.json").write_text('{"mode":"mock","target":[[0,1]]}', encoding="utf-8")
 
     monkeypatch.setenv("FIREGUARD_ARTIFACT_ROOT", str(artifact_root))
+    monkeypatch.setenv("FIREGUARD_APP_ENV", "development")
     monkeypatch.delenv("FIRMS_MAP_KEY", raising=False)
     get_settings.cache_clear()
 
@@ -73,10 +75,28 @@ def api_client(tmp_path, monkeypatch):
             ForecastArtifact(
                 id=100, forecast_run_id=run.id, artifact_type="probability_map",
                 storage_uri="mock/probability.json", content_type="application/json",
+                checksum_sha256=hashlib.sha256(
+                    (mock_dir / "probability.json").read_bytes()
+                ).hexdigest(),
+                status="mock",
+                metadata_json={
+                    "mode": "mock",
+                    "reveal_class": "pre_reveal",
+                    "file_size_bytes": (mock_dir / "probability.json").stat().st_size,
+                    "metadata": {"format": "JSON"},
+                },
             ),
             ForecastArtifact(
                 id=101, forecast_run_id=run.id, artifact_type="actual_target",
                 storage_uri="mock/actual.json", content_type="application/json",
+                checksum_sha256=hashlib.sha256((mock_dir / "actual.json").read_bytes()).hexdigest(),
+                status="mock",
+                metadata_json={
+                    "mode": "mock",
+                    "reveal_class": "post_reveal",
+                    "file_size_bytes": (mock_dir / "actual.json").stat().st_size,
+                    "metadata": {"format": "JSON"},
+                },
             ),
         ])
         db.commit()

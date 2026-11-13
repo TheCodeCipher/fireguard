@@ -104,3 +104,10 @@ See `.env.example`. Important values:
 - Do not register a replay run unless `is_oof=true` and its split is explicitly `test` or `held_out`.
 - Actual targets and target-derived metrics stay unavailable until the replay session's reveal action is accepted.
 - SQLite has been used for local validation; PostgreSQL requires a separate integration run.
+
+
+## Phase 3/4 — Offline OOF artifact registry
+
+The backend is retrieve-only: train/infer/export outside FastAPI, then register static OOF artifacts. Use `scripts/register_oof_artifacts.py` from this directory to validate and register the JSON manifest. Run `--dry-run` first; omit `--publish` to stop at `validated`. Only publish after the frozen split, checkpoint/config hashes and Gate 3/OOF evidence are approved.
+
+See `../docs/backend_artifact_storage.md` and `../docs/interfaces/phase4_oof_artifact_contract.md`. Never commit real rasters, model checkpoints, raw datasets or the `artifacts/restricted/` target namespace.

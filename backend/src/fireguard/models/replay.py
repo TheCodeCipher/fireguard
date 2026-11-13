@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from fireguard.models.forecast import ForecastRun
-from datetime import UTC, datetime
-
-from sqlalchemy import DateTime, Float, ForeignKey, String
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from fireguard.core.database import Base
+
+if TYPE_CHECKING:
+    from fireguard.models.forecast import ForecastRun
 
 
 class ReplayMetric(Base):
@@ -36,6 +36,9 @@ class ReplaySession(Base):
     )
     forecast_viewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revealed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    audit_json: Mapped[list[dict]] = mapped_column(
+        JSON, default=list, server_default="[]", nullable=False
+    )
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, index=True
     )
