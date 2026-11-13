@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - "role-*/**"
+      # INTEGRATION (Prototype): also run on the integration branch.
+      - "integration/**"
   pull_request:
     branches:
       - main
