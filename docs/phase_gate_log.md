@@ -10,3 +10,5 @@
 | - | Gate 3: M3, M4, terrain | needs M1-M4 runs | NOT RUN | - |
 | - | Explanation layer | not implemented or validated | UNAVAILABLE (do not display) | Role 4 |
 | - | Uncertainty layer | none exists; outputs are single probabilities | UNAVAILABLE | Role 4 |
+| 2026-11-13 | Integration branch `integration/prototype` | all role branches merged + Role 1/4 overlays + Role 2 folded into `ml/` + Role 6 frontend; ML 265 passed (1 skip), backend 61, frontend 15; `docs/prototype/INTEGRATION_LOG.md` | READY FOR LEAD REVIEW (PR) | (lead) |
+| 2026-11-13 | Gate 4: replay end to end | mechanics demonstrated on SYNTHETIC data and mock artifacts: forecast-first, reveal lock, no pre-reveal leaks, metrics after reveal (`docs/evidence/integration/prototype_demo_run.json`); no real OOF artifact exists | CONDITIONAL (real artifacts after Gate 3) | (lead) |

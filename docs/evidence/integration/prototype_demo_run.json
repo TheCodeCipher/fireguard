@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-13",
+  "what": "Prototype end-to-end run on SYNTHETIC WSTS-format data: make_synthetic_wsts.py -> run_prototype_pipeline.py (Role 1 release, Role 3 train/export, Role 1 catalogue, Role 4 validation/reveal, bridge) -> backend load_registry_bundle.py -> API -> frontend",
+  "is_result": false,
+  "note": "Synthetic pixels (real event IDs, dates and frames) and a plumbing-budget M3 (base 8, 25 epochs, fold 2020 only). Every number below is about plumbing, not fire forecasting.",
+  "events": {
+    "train": [
+      "fire_25294989",
+      "fire_21997854",
+      "fire_21890063"
+    ],
+    "validation": [
+      "fire_25294983",
+      "fire_25205260"
+    ],
+    "test": [
+      "fire_24461965",
+      "fire_24604426",
+      "fire_24025599"
+    ]
+  },
+  "role1_release": {
+    "status": "PARTIAL",
+    "events": 8,
+    "tiffs": 85,
+    "n_problems": 0,
+    "terrain_static_events": 8
+  },
+  "role3_training": {
+    "run": "m3_stacked_unet_base8_T5_seed0",
+    "fold": 2020,
+    "seconds": 93.2
+  },
+  "role3_export_forecasts": 17,
+  "role1_catalogue": {
+    "catalogued": 17,
+    "rejected": 0
+  },
+  "role4_validation": {
+    "oof": {
+      "expected": 2861,
+      "accepted": 17,
+      "rejected": 0,
+      "missing": 2844,
+      "duplicates": 0,
+      "coverage": 0.005941978329255505
+    },
+    "metric_mismatches": 0,
+    "reveal_sessions": 17
+  },
+  "bridge": {
+    "mode": "mock",
+    "mock_reasons": [
+      "data root holds SYNTHETIC_NOT_WSTS.txt (synthetic pixels, not WSTS)",
+      "run holds PROTOTYPE_PLUMBING_RUN.json (plumbing training budget)",
+      "configs/temporal_unet.yaml training.enabled is false (Gate 2 not recorded)"
+    ],
+    "forecasts": 17
+  },
+  "backend": {
+    "registry_states": [
+      "mock"
+    ],
+    "events": 3,
+    "forecasts": 17,
+    "publish_attempt": "refused: mock bundles can never be published",
+    "api_checks": {
+      "reveal_before_forecast": "409 FORECAST_NOT_VIEWED",
+      "actual_before_reveal": "403 ACTUAL_NOT_REVEALED",
+      "metrics_before_reveal": "403 ACTUAL_NOT_REVEALED",
+      "guessed_target_artifact_before_reveal": "403 ACTUAL_NOT_REVEALED",
+      "artifact_without_session": "422 missing X-Replay-Session-ID",
+      "post_reveal_target_cache_control": "private, no-store",
+      "find_target_leaks_on_events_origins_inputs_forecast": []
+    }
+  },
+  "frontend": {
+    "post_reveal_requests_before_reveal": [],
+    "screenshots": "docs/prototype/screenshots/"
+  }
+}

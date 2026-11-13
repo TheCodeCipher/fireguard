@@ -186,6 +186,48 @@ def test_real_bundle_needs_publish_then_serves_the_reveal_flow(env):
     }
 
 
+# Same rule as Role 4's fireguard_ml.evaluation.reveal.find_target_leaks (copied, not imported:
+# the backend must not depend on the ML package). Reveal contract gap 3, now automated.
+LEAK_MARKERS = ("actual", "target_uri", "target_path", "target_value", "y_true", "reveal_store",
+                "observability", "auprc_event", "per_event", "n_pos", "iou", "f1")  # fmt: skip
+ALLOWED_KEYS = {"target_date", "fold_validation_auprc"}
+
+
+def find_target_leaks(obj, path="$"):
+    hits = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            kl = str(k).lower()
+            if kl not in ALLOWED_KEYS and any(m in kl for m in LEAK_MARKERS):
+                hits.append(f"{path}.{k}")
+            hits += find_target_leaks(v, f"{path}.{k}")
+    elif isinstance(obj, list | tuple):
+        for i, v in enumerate(obj):
+            hits += find_target_leaks(v, f"{path}[{i}]")
+    elif isinstance(obj, str) and any(
+        m in obj.lower() for m in ("reveal_store", "actual_target", "/actual/", "restricted/")
+    ):
+        hits.append(path)
+    return hits
+
+
+def test_pre_reveal_responses_carry_no_target_content(env):
+    loader, _session, artifact_root, tmp = env
+    loader.load(_bundle(tmp, artifact_root, mode="real"), publish=True)
+    client = TestClient(app)
+    sid = client.post("/api/v1/replays/fire_1/2020-08-05/session").json()["session_id"]
+    h = {"X-Replay-Session-ID": sid}
+    responses = {
+        "events": client.get("/api/v1/wsts/events").json(),
+        "origins": client.get("/api/v1/replays/fire_1/origins").json(),
+        "inputs": client.get("/api/v1/replays/fire_1/2020-08-05/inputs", headers=h).json(),
+        "forecast": client.get("/api/v1/replays/fire_1/2020-08-05/forecast", headers=h).json(),
+    }
+    assert {name: find_target_leaks(body) for name, body in responses.items()} == {
+        name: [] for name in responses
+    }
+
+
 def test_real_bundle_without_level_a_pass_is_refused_by_role5(env):
     loader, _session, artifact_root, tmp = env
     bundle = _bundle(tmp, artifact_root, mode="real", time_safety="STRICT_LEVEL_A_PASS")

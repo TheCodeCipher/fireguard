@@ -9,7 +9,7 @@
 - [ ] Coordinate canonical padding utility ownership with Role 1.
 - [ ] Create Python 3.11 environment; record PyTorch/CUDA/GPU and VRAM or fallback details.
 - [x] Run synthetic padding, model-shape and masked-loss checks (9 passed).
-- [x] Run a short synthetic 40-channel shape timing demo; record it as non-WSTS evidence in `docs/compute_benchmark.md`.
+- [x] Run a short synthetic 40-channel shape timing demo; record it as non-WSTS evidence in `docs/role2/compute_benchmark.md`.
 - [ ] Replace exploratory 40-channel config selection with approved strict channel names when Role 4 provides them.
 - [ ] Run one representative short training benchmark on Role 1's real sample and agreed compute route; record loader time, steps, parameter count, training time, peak memory and hardware.
 - [ ] Save evidence and update `compute_benchmark.md` and the model contract.
