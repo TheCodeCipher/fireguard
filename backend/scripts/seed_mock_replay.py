@@ -3,6 +3,7 @@
 Run from backend/: python scripts/seed_mock_replay.py
 Never use this fixture as a research result or real WSTS event.
 """
+import hashlib
 import json
 from datetime import date
 from pathlib import Path
@@ -74,6 +75,7 @@ with SessionLocal() as db:
             protocol="MOCK_ONLY",
             time_safety_status="MOCK_NOT_A_RESEARCH_RESULT",
             metadata_json={
+                "mode": "mock",
                 "input_window_start": "2020-07-31",
                 "input_window_end": "2020-08-01",
                 "channel_manifest": "synthetic-fixture",
@@ -82,22 +84,29 @@ with SessionLocal() as db:
         )
         db.add(run)
         db.flush()
-        db.add_all([
-            ForecastArtifact(
-                forecast_run_id=run.id,
-                artifact_type="probability_map",
-                storage_uri="mock/probability_map.json",
-                content_type="application/json",
-                metadata_json={"mode": "mock"},
-            ),
-            ForecastArtifact(
-                forecast_run_id=run.id,
-                artifact_type="actual_target",
-                storage_uri="mock/actual_target.json",
-                content_type="application/json",
-                metadata_json={"mode": "mock"},
-            ),
-        ])
+
+    fixture_specs = [
+        ("probability_map", "mock/probability_map.json", "pre_reveal", ARTIFACT_DIR / "probability_map.json"),
+        ("actual_target", "mock/actual_target.json", "post_reveal", ARTIFACT_DIR / "actual_target.json"),
+    ]
+    for artifact_type, storage_uri, reveal_class, file_path in fixture_specs:
+        artifact = db.query(ForecastArtifact).filter_by(
+            forecast_run_id=run.id, storage_uri=storage_uri
+        ).one_or_none()
+        if artifact is None:
+            artifact = ForecastArtifact(forecast_run_id=run.id, storage_uri=storage_uri)
+            db.add(artifact)
+        artifact.artifact_type = artifact_type
+        artifact.content_type = "application/json"
+        artifact.checksum_sha256 = hashlib.sha256(file_path.read_bytes()).hexdigest()
+        artifact.status = "mock"
+        artifact.metadata_json = {
+            "mode": "mock",
+            "reveal_class": reveal_class,
+            "file_size_bytes": file_path.stat().st_size,
+            "metadata": {"format": "JSON"},
+        }
+
     db.commit()
 
 print("Synthetic replay fixture seeded. Do not report these values as model results.")

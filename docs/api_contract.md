@@ -165,7 +165,7 @@ Events are loaded from the `wildfire_events` table, which is the Phase 1 ORM rep
 
 `GET /api/v1/replays/{event_id}/origins`
 
-Only `ForecastRun` records explicitly marked `is_oof=true` and `split_name` equal to `test` or `held_out` are listed. Other runs are never made available as valid replay forecasts.
+Only held-out `ForecastRun` records with a `published` probability-map artifact are listed. `generated`, `validated` and `revoked` records are not replay-visible. Explicit `mock` fixtures are visible only when `FIREGUARD_APP_ENV=development` and are identified as mock in the response. Other runs are never made available as valid research forecasts.
 
 Response fields include origin date, target date, horizon, protocol, fold ID, model version, split name and OOF flag.
 
@@ -181,7 +181,7 @@ A replay session is required. The backend enforces the sequence, not only the fr
 6. `GET /api/v1/replays/{event_id}/{origin}/actual` is allowed only after reveal.
 7. `GET /api/v1/replays/{event_id}/{origin}/metrics` is also held until reveal because metrics summarize comparison with the target.
 
-Artifact descriptors point to `GET /api/v1/artifacts/{artifact_id}`. The same `X-Replay-Session-ID` header is required for artifact retrieval. Actual-target artifacts require the session's reveal state.
+Artifact descriptors point to `GET /api/v1/artifacts/{artifact_id}`. The same `X-Replay-Session-ID` header is required for artifact retrieval. The forecast must already have been loaded in the session before a forecast artifact can be fetched. Actual-target and target-derived metric artifacts require the session's reveal state. Files are re-hashed before serving; post-reveal downloads use `Cache-Control: private, no-store`.
 
 Replay artifacts must be static files generated offline. No route in this API launches a model or computes a forecast.
 
@@ -247,3 +247,25 @@ FastAPI serves the current OpenAPI document at `/openapi.json`; a generated snap
 - [NASA FIRMS API use tutorial](https://firms.modaps.eosdis.nasa.gov/content/academy/data_api/firms_api_use.html): examples for availability and Area API requests.
 
 The implementation intentionally limits each Area API request to at most five days, checks the availability endpoint first, and keeps the MAP_KEY on the backend. Re-check the official documentation if NASA changes the API contract.
+
+
+## 11. Phase 3/4 artifact registry lifecycle
+
+Phase 3 extends the existing `forecast_artifacts` table and `ForecastArtifact.metadata_json`; it does not add a second artifact registry table. The lifecycle is `generated -> validated -> published`, with separate `mock` and `revoked` states. Phase 2 `available` rows are demoted to `generated` by migration until their OOF metadata and files are revalidated.
+
+Register an offline manifest from `backend/` in two explicit steps:
+
+```powershell
+# Inspect without database writes
+python scripts/register_oof_artifacts.py --manifest path\to\oof_manifest.json --dry-run
+
+# First persisted registration: status becomes validated, not replay-visible
+python scripts/register_oof_artifacts.py --manifest path\to\oof_manifest.json
+
+# Separate publication operation, only after held-out OOF evidence approval
+python scripts/register_oof_artifacts.py --manifest path\to\oof_manifest.json --publish
+```
+
+The CLI validates the existing run/event/group/fold/protocol, model checkpoint/config hashes, data/split/channel/input manifest hashes, Level-A status, relative paths, SHA-256, file size and raster geospatial metadata. `--publish` requires both `probability_map` and `actual_target`, and only unchanged records already in `validated` state can be published. Revalidation cannot demote published artifacts; revoked artifacts are terminal. Mock manifests are allowed only in development and can never be published.
+
+See `docs/backend_artifact_storage.md`, `docs/interfaces/phase4_oof_artifact_contract.md` and `docs/interfaces/replay_api_contract.md` for the full contracts.
