@@ -1,7 +1,7 @@
 // FireGuard Role 3 -- Earth Engine checks that close the UNKNOWNs in docs/gfs_channel_audit.md (section 8).
 // Paste into https://code.earthengine.google.com/ , press Run, then copy the Console output (or screenshot it)
 // into docs/evidence/ and fill in the "EE check results" table in docs/gfs_channel_audit.md.
-// Nothing here downloads data. Date used: 2018-01-06 (the sample day in docs/wsts_data_dictionary.md).
+// Nothing here downloads data. Date used: 2018-01-06 (the sample day in docs/data_dictionary.md).
 
 var D = '20180106';
 var gfs = ee.ImageCollection('NOAA/GFS0P25');

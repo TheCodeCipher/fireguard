@@ -38,3 +38,5 @@ The checkpoint guard works on channel names. It relies on Role 4's frozen strict
 ## Wind direction in the strict models
 
 GRIDMET wind direction (processed index 7) and aspect (13) reach the model through the baseline loader as `sin(angle)` only, which cannot tell 30 degrees from 150 degrees. Both are full-circle in the raw data, so a sin and cos pair would be valid for them. Whether to add cos is Role 4's and Role 2's decision; it changes `c_strict` and must be made before the strict list is frozen.
+
+Update 2026-11-13: Role 4's register now excludes all GRIDMET channels (Level A UNKNOWN pending EE check 5), so GRIDMET wind direction is not a strict input at all. The strict list is 7 channels; aspect is the only angle channel left, still `sin` only. The sin/cos proposal for aspect is pending and the schema is unchanged until it is approved. Phase 3 status of every branch: `reports/phase3/role3_architecture_and_branch_decisions.md`.
