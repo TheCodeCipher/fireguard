@@ -1,0 +1,50 @@
+name: FireGuard ML CI
+
+on:
+  push:
+    branches:
+      - main
+      - "role-*/**"
+      - "role*/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  ml-tests:
+    name: ML Tests and Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: ml/pyproject.toml
+
+      - name: Install CPU PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install ML package
+        working-directory: ml
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run Ruff
+        working-directory: ml
+        run: python -m ruff check src
+
+      - name: Run automated tests
+        working-directory: ml
+        run: python -m pytest -v
+
+      - name: Syntax-check the audit and smoke scripts
+        run: python -m compileall -q scripts
