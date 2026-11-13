@@ -11,6 +11,9 @@ dependencies = [
     "torch>=2.2",
     "numpy>=1.26",
     "scipy>=1.11",
+    # INTEGRATION: Role 2's validated YAML config loader (training/config.py) needs PyYAML at
+    # runtime, not only in scripts. Exact versions Role 2 tested are in constraints-py311-cpu.txt.
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -25,7 +28,8 @@ dev = [
     "pytest>=8.3,<10",
     "pytest-cov>=6.0,<8.0",
     "ruff>=0.9,<1.0",
-    "pyyaml>=6.0",
+    # INTEGRATION: Role 2's metric cross-check test compares against scikit-learn when present.
+    "scikit-learn>=1.4",
 ]
 
 [tool.setuptools]
@@ -37,7 +41,9 @@ where = ["src"]
 [tool.pytest.ini_options]
 # Tests live inside the package so that `pip install -e ml` makes them importable from anywhere
 # and so that no second top-level `tests` package collides with backend/tests.
-testpaths = ["src/fireguard_ml/tests"]
+# INTEGRATION: Role 2's tests live in ml/tests (they resolve ../configs/unet.yaml from ml/), the
+# other roles' tests inside the package; both are collected. Test file names are unique.
+testpaths = ["tests", "src/fireguard_ml/tests"]
 pythonpath = ["src"]
 addopts = "-ra"
 

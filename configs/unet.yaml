@@ -1,0 +1,57 @@
+# FireGuard Role 2 configuration.
+# Role 4 supplied the strict channel decisions. The 41-channel aspect sin/cos
+# preprocessing and Role 3 receiver confirmation remain pending, so strict mode stays off.
+model:
+  name: m1_unet
+  base_channels: 4
+  depth: 4
+  output: logits
+
+channel_schema:
+  name: wsts_processed_v1
+  status: ROLE4_STRICT_LIST_SUPPLIED_ASPECT_TRANSFORM_PENDING
+  # INTEGRATION: path corrected (the data dictionary lives at docs/data_dictionary.md in the repo;
+  # docs/data/ existed only in Role 2's review copy). Channel names are now Role 1's canonical
+  # names, imported by channel_schema.py from fireguard_ml.data.wsts_dataset.
+  channel_names_source: docs/data_dictionary.md (Role 1, section 12) plus docs/leakage_audit.csv (Role 4)
+  # INTEGRATION: the seven strict channels from Role 4's decided register, in loader order, the
+  # same list as configs/temporal_unet.yaml and configs/data/strict_input_v1.yaml. Listing them
+  # is not an approval: strict_approved stays false until the lead records the sign-off.
+  selected_names:
+    - viirs_m11
+    - viirs_i2
+    - viirs_i1
+    - slope
+    - aspect
+    - elevation
+    - binary_active_fire_mask
+  strict_approved: false
+  approval_reference: null
+  approved_channels_sha256: null
+
+spatial:
+  pad_multiple: 32
+  pad_side: bottom_right
+  evaluation_policy: full_frame_pad_then_unpad
+  geometric_augmentation: false
+
+loss:
+  name: masked_bce_dice
+  bce_weight: 1.0
+  dice_weight: 1.0
+
+reproducibility:
+  seed: 2026
+  deterministic: true
+
+data:
+  sample_shape_reference: [1, 40, 288, 224]
+  sample_event_reference: fire_21458798
+  sample_input_day_reference: '2018-01-06'
+  sample_target_day_reference: '2018-01-07'
+  split_manifest_path: data/manifests/p1_loyo_fold_manifest.csv
+  # INTEGRATION: was 55a3ca18..., the first freeze, withdrawn by Role 4 (footprint rule v2,
+  # docs/fire_complex_groups.md section 3a). Current frozen hash, re-verified on the file:
+  split_manifest_sha256: 34e2909009ad3bb7f5aefb3ad9b5c02ec1df4c776eb2c5bf02eaf68f098e6976
+  target_nodata_value: null # Role 1 must confirm target nodata semantics
+  use_gfs: false
