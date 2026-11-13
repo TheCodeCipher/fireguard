@@ -10,7 +10,17 @@ Multimodal spatio-temporal deep learning platform for wildfire intelligence, pro
 
 The project aims to go beyond conventional active-fire monitoring by developing a multimodal spatio-temporal forecasting model and an interactive historical forecasting and replay environment.
 
-> **Project Status:** Research prototype under development.
+> **Project Status:** Research prototype under development. The integrated prototype
+> (all six roles) lives on branch `integration/prototype`; no model has been trained on real data
+> yet, so every replay in it is a labelled synthetic demonstration.
+
+## Prototype quick start
+
+| Read | For |
+|---|---|
+| [`docs/prototype/RUNBOOK.md`](docs/prototype/RUNBOOK.md) | setup, tests, the 5-minute synthetic demo, real-data runs (PowerShell) |
+| [`docs/prototype/PROTOTYPE_STATUS.md`](docs/prototype/PROTOTYPE_STATUS.md) | what is done, what is not, gates, next steps |
+| [`docs/prototype/INTEGRATION_LOG.md`](docs/prototype/INTEGRATION_LOG.md) | every merge, conflict, added/changed/removed file and why |
 
 ---
 
@@ -63,7 +73,7 @@ The strict default architecture excludes GFS channels. GNN, HLS model integratio
 | MTBS / Landsat Burned Area | Event-level label-quality validation           |
 | LANDFIRE                   | Optional additional fuel information           |
 
-Raw datasets will remain outside the Git repository. Refer to `docs/data/` for dataset documentation and access information.
+Raw datasets will remain outside the Git repository. Refer to `docs/data_dictionary.md`, `docs/data_sources_and_licenses.md` and `docs/data_provenance.md` for dataset documentation and access information.
 
 ## 5. Research Scope
 
@@ -120,7 +130,7 @@ A prototype interface for submitting fire/smoke photographs, timestamps and loca
 | Database              | PostgreSQL              |
 | ORM                   | SQLAlchemy              |
 | Frontend              | React, TypeScript, Vite |
-| Styling               | Tailwind CSS            |
+| Styling               | Plain CSS (one stylesheet; Tailwind in the plan, not needed yet) |
 | Maps                  | MapLibre GL JS          |
 | Geospatial processing | Rasterio, GeoPandas     |
 | Testing               | Pytest, HTTPX           |
@@ -132,22 +142,17 @@ A prototype interface for submitting fire/smoke photographs, timestamps and loca
 
 ```text
 fireguard/
-├── .github/
-├── backend/
-│   ├── src/fireguard/
-│   └── tests/
-├── ml/
-│   ├── src/fireguard_ml/
-│   └── tests/
-├── frontend/
-│   └── src/
-├── configs/
-├── data/
-├── docs/
-├── scripts/
-├── tests/
+├── .github/workflows/      ml-ci, backend-ci, frontend-ci
+├── backend/                FastAPI retrieve-only API (Role 5): src/fireguard, tests, migrations, scripts
+├── ml/                     the one Python ML package fireguard_ml (Roles 1-4): src, tests
+├── frontend/               React + TypeScript + Vite + MapLibre app (Role 6)
+├── configs/                unet.yaml (M1), temporal_unet.yaml (M3/M4), evaluation.yaml, data/strict_input_v1.yaml
+├── data/manifests/         frozen P1 split, scored samples, event metadata (no raw data)
+├── docs/                   contracts, protocols, hand-offs, evidence, prototype/
+├── reports/phase3/         comparison/ablation/calibration reports (NOT RUN where no model exists)
+├── scripts/                data release, training, export, validation, demo pipeline
+├── notebooks/              Role 1 EDA
 ├── .env.example
-├── .gitignore
 ├── CONTRIBUTING.md
 └── README.md
 ```
@@ -199,11 +204,13 @@ role-6/frontend/live-monitor
 
 ## 12. Project Documentation
 
-- `docs/architecture/` – System and model architecture.
-- `docs/data/` – Dataset inventory, data dictionaries and leakage audit.
-- `docs/api/` – Backend API contracts.
-- `docs/experiments/` – Experiments and evaluation results.
-- `docs/project/` – Project plan and execution documentation.
+- `docs/prototype/` – integration log, runbook, status of the integrated prototype.
+- `docs/project/` – project plan v4 and the Phase 1/2 execution guide.
+- `docs/data_dictionary.md`, `docs/leakage_audit.csv`, `configs/data/strict_input_v1.yaml` – data and the strict input contract.
+- `docs/evaluation_protocol.md`, `docs/model_comparison_protocol.md`, `docs/metrics_contract.md`, `docs/phase_gate_log.md` – evaluation and gates.
+- `docs/temporal_input_contract.md`, `docs/temporal_architecture_note.md`, `docs/temporal_oof_export_contract.md` – temporal models.
+- `docs/api_contract.md`, `docs/openapi.json`, `docs/interfaces/`, `docs/reveal_contract.md`, `docs/backend_artifact_storage.md` – API, artifacts, reveal.
+- `docs/handoff/` – per-role hand-off reports; `README_ROLE1.md`, `README_ROLE4.md`, `frontend/README.md`, `ml/README.md`, `backend/README.md` – per-area guides.
 
 ---
 

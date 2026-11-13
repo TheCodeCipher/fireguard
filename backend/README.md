@@ -111,3 +111,25 @@ See `.env.example`. Important values:
 The backend is retrieve-only: train/infer/export outside FastAPI, then register static OOF artifacts. Use `scripts/register_oof_artifacts.py` from this directory to validate and register the JSON manifest. Run `--dry-run` first; omit `--publish` to stop at `validated`. Only publish after the frozen split, checkpoint/config hashes and Gate 3/OOF evidence are approved.
 
 See `../docs/backend_artifact_storage.md` and `../docs/interfaces/phase4_oof_artifact_contract.md`. Never commit real rasters, model checkpoints, raw datasets or the `artifacts/restricted/` target namespace.
+
+## Loading a pipeline registry bundle (added during the Prototype integration)
+
+`scripts/load_registry_bundle.py` loads what `../scripts/build_backend_registry.py` produces from
+Role 4's reveal package. It does not bypass anything above: events go through
+`import_wsts_event_catalogue.import_catalogue`, artifacts through
+`register_oof_artifacts.register_manifest` (all validation and lifecycle rules), and it also
+writes the precomputed `replay_metrics` rows that the metrics endpoint serves after reveal.
+
+```powershell
+python -m alembic upgrade head
+python scripts/load_registry_bundle.py --bundle <registry folder>/registry_bundle.json
+python scripts/load_registry_bundle.py --bundle <registry folder>/registry_bundle.json --publish
+```
+
+Mock bundles (synthetic data, plumbing runs, or anything before Gate 2) load only with
+`FIREGUARD_APP_ENV=development` and can never be published. Set `FIREGUARD_ARTIFACT_ROOT` to the
+same folder the bundle's files were copied into. See `../docs/prototype/RUNBOOK.md`.
+
+Integration fix in this area: `services/oof_registry.validate_real_oof_context` now accepts the
+integer `horizon_hours` that `register_oof_artifacts.py` requires (before, every real manifest
+failed one of the two checks). Regression tests: `tests/unit/test_oof_registry_integration_fixes.py`.

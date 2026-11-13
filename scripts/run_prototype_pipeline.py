@@ -88,6 +88,13 @@ def main() -> None:
         "--base", type=int, default=8, help="U-Net width (32 in the real config)"
     )
     ap.add_argument("--device", default="cpu")
+    ap.add_argument(
+        "--events",
+        nargs="*",
+        default=None,
+        help="restrict to these event IDs (use on the full real archive; it needs at least one "
+        "train, one validation and one test event of --fold)",
+    )
     a = ap.parse_args()
 
     data_root, work = a.data_root.resolve(), a.work.resolve()
@@ -97,6 +104,11 @@ def main() -> None:
     cfg_y = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
     data_cfg = cfg_y["data"]
     events = sorted(scan_events(data_root))
+    if a.events:
+        unknown = sorted(set(a.events) - set(events))
+        if unknown:
+            raise SystemExit(f"--events not found under {data_root}: {unknown}")
+        events = sorted(a.events)
     if not events:
         raise SystemExit(f"no WSTS events under {data_root}")
     print(json.dumps({"data_root": str(data_root), "synthetic_data": synthetic,
@@ -143,7 +155,8 @@ def main() -> None:
         preprocessing_version=DATA_CONTRACT_VERSION,
         extra={"prototype_plumbing_run": True, "synthetic_data": synthetic},
     )
-    source = WSTSTemporalSource(data_root, channels, T, proto.eval_samples)
+    # Only the selected events are visible to training and export (WSTSTemporalSource filter).
+    source = WSTSTemporalSource(data_root, channels, T, proto.eval_samples, events=events)
     summary = train_fold(cfg, source, proto, a.fold, run_dir, a.device)
     print(
         json.dumps(

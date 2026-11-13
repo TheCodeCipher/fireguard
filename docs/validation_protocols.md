@@ -1038,7 +1038,7 @@ Required artifacts:
 
 **Objective:** Close Role 4 Phase 1 with the required handoff artifact.
 
-Required artifact: `docs/handoffs/role4_phase1_handoff.md` containing:
+Required artifact: `docs/handoff/role4_phase1_handoff.md` containing:
 - tasks completed with paths and evidence;
 - tests run with results;
 - dataset and source decisions (verified / assumed / unknown / excluded);

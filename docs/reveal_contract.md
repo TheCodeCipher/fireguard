@@ -32,6 +32,13 @@ revealed_target_artifact_id, revealed_at_utc, model_version, fold (`reveal.audit
 
 ## Gaps found in the current backend (main branch), for Role 5
 
+Status after the Prototype integration (2026-11-13), see `docs/prototype/INTEGRATION_LOG.md`:
+1 closed by Role 5's Phase 3/4 branch (the reveal audit entry stores `actual_artifact_ids`);
+2 open, kept safe in practice: no next-day observability raster is registered, and the
+observability fraction travels only inside the post-reveal `metrics.json`;
+3 done: checked on the live demo API (all four pre-reveal responses returned `[]`) and automated
+in `backend/tests/integration/test_registry_bundle_loader.py::test_pre_reveal_responses_carry_no_target_content`.
+
 1. `ReplaySession` stores `revealed_at` but not the revealed target artifact id; add
    `revealed_target_artifact_id` (or log `audit_record` rows) to meet the audit requirement.
 2. `ACTUAL_TYPES = {"actual_target"}` locks only the target raster. Next-day observability is also
