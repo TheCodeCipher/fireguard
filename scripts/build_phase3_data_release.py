@@ -169,14 +169,24 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--data-root", type=Path, required=True)
     ap.add_argument("--events", nargs="*", default=None, help="subset (testing only)")
+    # INTEGRATION (Prototype): optional output folder. Without it the release is written into the
+    # repository (data/manifests, docs/evidence/role1) exactly as before. A staged subset or the
+    # synthetic demo passes --out-dir so it can never overwrite the committed release files.
+    ap.add_argument("--out-dir", type=Path, default=None,
+                    help="write manifests/ and evidence/ here instead of the repository")  # fmt: skip
     a = ap.parse_args()
+    man_out = a.out_dir / "manifests" if a.out_dir else MAN
+    evid_out = a.out_dir / "evidence" if a.out_dir else EVID
+    man_out.mkdir(parents=True, exist_ok=True)
+    evid_out.mkdir(parents=True, exist_ok=True)
     events, files, terrain, problems = audit(a.data_root, set(a.events) if a.events else None)
     status = "FAILED" if problems else ("PARTIAL" if a.events else "COMPLETE")
-    write_csv(MAN / "wsts_file_checksums.csv", files)
-    write_csv(MAN / "phase3_input_manifest.csv", input_manifest(events, files))
-    write_csv(EVID / "terrain_qa.csv", terrain)
+    write_csv(man_out / "wsts_file_checksums.csv", files)
+    write_csv(man_out / "phase3_input_manifest.csv", input_manifest(events, files))
+    write_csv(evid_out / "terrain_qa.csv", terrain)
     hashes = {p.name: sha256_text_file(p) for p in [
-        MAN / "wsts_file_checksums.csv", MAN / "phase3_input_manifest.csv", EVID / "terrain_qa.csv",
+        man_out / "wsts_file_checksums.csv", man_out / "phase3_input_manifest.csv",
+        evid_out / "terrain_qa.csv",
         MAN / "wsts_eval_samples.csv", MAN / "p1_loyo_fold_manifest.csv"]}  # fmt: skip
     release = {
         "status": status, "events": len(events), "tiffs": len(files),
@@ -191,7 +201,7 @@ def main() -> None:
         "terrain_static_events": sum(all(r[f"{k}_max_abs_change_across_days"] == 0
                                          for k in TERRAIN) for r in terrain),
     }  # fmt: skip
-    (EVID / "phase3_data_release.json").write_text(json.dumps(release, indent=2) + "\n")
+    (evid_out / "phase3_data_release.json").write_text(json.dumps(release, indent=2) + "\n")
     print(json.dumps({k: release[k] for k in ("status", "events", "tiffs", "n_problems",
                                               "terrain_static_events")}))  # fmt: skip
     raise SystemExit(1 if problems else 0)
