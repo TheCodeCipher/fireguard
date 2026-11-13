@@ -142,10 +142,13 @@ export function LiveMonitor() {
   return (
     <div className="monitor">
       <aside className="monitor-controls" aria-label="Detection filters">
-        <p className="domain-note">
+        <div>
+          <h1 className="rail-title">Live monitor</h1>
+          <p className="domain-note" style={{ marginBottom: 0 }}>
           Satellite fire detections from NASA FIRMS. These are observations, not FireGuard forecasts, and each
           satellite is listed separately.
-        </p>
+          </p>
+        </div>
         <label>
           Satellite and product
           <select value={source} onChange={(e) => setSource(e.target.value as FirmsSource)}>

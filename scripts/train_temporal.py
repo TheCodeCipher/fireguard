@@ -1,4 +1,4 @@
-"""Train M3 / M4 for one or more P1 folds (Role 3, P3-R3-02/03).
+"""Train M1 / M3 / M4 for one or more P1 folds (Role 3, P3-R3-02/03; M1 added by Integration).
 
     python scripts/train_temporal.py --model m3_stacked_unet --T 5 --folds 2018 2019 2020 2021 \
         --source wsts --data-root <WSTS folder> --out outputs/temporal
@@ -7,9 +7,10 @@
 only source that produces reportable results. ``--source synthetic`` runs the identical fold loop on MOCK
 data keyed to the real manifest (a pipeline dry run; its numbers mean nothing).
 
-Real training also requires ``training.enabled: true`` in configs/temporal_unet.yaml, which may
-only be set once Gate 2 is recorded. Checkpoints go under --out; outputs/ and *.pt are
-git-ignored, keep it that way.
+Real training of M3/M4 also requires ``training.enabled: true`` in configs/temporal_unet.yaml,
+which may only be set once Gate 2 is recorded. M1 (``m1_spatial_unet``, T=1) is Gate 2's own
+evidence and is never blocked by that flag (INTEGRATION, Prototype). Checkpoints go under --out;
+outputs/ and *.pt are git-ignored, keep it that way.
 """
 
 from __future__ import annotations
@@ -28,7 +29,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--model", required=True, choices=["m3_stacked_unet", "m4_convlstm_unet"])
+    ap.add_argument(
+        "--model", required=True, choices=["m1_spatial_unet", "m3_stacked_unet", "m4_convlstm_unet"]
+    )
     ap.add_argument("--T", type=int, default=None, help="context length (default: config)")
     ap.add_argument("--folds", type=int, nargs="+", default=[2018, 2019, 2020, 2021])
     ap.add_argument("--seed", type=int, default=0)
@@ -45,16 +48,21 @@ def main() -> None:
 
     cfg_y = yaml.safe_load(a.config.read_text())
     tr, data = cfg_y["training"], cfg_y["data"]
-    if a.source == "wsts" and not tr["enabled"]:
-        raise SystemExit("BLOCKED: training.enabled is false (Gate 2 not recorded). See config.")
+    is_m1 = a.model == "m1_spatial_unet"
+    # INTEGRATION: the Gate 2 flag blocks the temporal models only; M1 is what Gate 2 measures.
+    if a.source == "wsts" and not tr["enabled"] and not is_m1:
+        raise SystemExit(
+            "BLOCKED: training.enabled is false (Gate 2 not recorded). Train and compare M1 "
+            "first (--model m1_spatial_unet); see docs/prototype/RUNBOOK.md section 5."
+        )
     if a.source == "synthetic" and (a.max_epochs or a.samples_per_epoch) is None:
         a.max_epochs, a.samples_per_epoch = 2, 64
     m = next(v for v in cfg_y["models"].values() if v["model_type"] == a.model)
-    T = a.T or data["n_leading_observations"]
+    T = 1 if is_m1 else (a.T or data["n_leading_observations"])
     allowed_bases = {m["base"], cfg_y["ablation"]["m3_size_matched_base"]}
     if a.base is not None and (a.base not in allowed_bases or a.model != "m3_stacked_unet"):
         raise SystemExit(f"--base {a.base} is not a predeclared width for {a.model}")
-    if T not in cfg_y["ablation"]["context_lengths"]:
+    if not is_m1 and T not in cfg_y["ablation"]["context_lengths"]:
         raise SystemExit(f"T={T} is not a predeclared context length {cfg_y['ablation']}")
     cfg = TemporalRunConfig(
         model=a.model,

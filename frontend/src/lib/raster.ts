@@ -38,15 +38,18 @@ export async function decodeGeoTiff(bytes: ArrayBuffer, nodata?: number | null):
 type RGBA = [number, number, number, number];
 
 /**
- * Probability ramp: transparent below 1 %, then pale straw -> orange -> deep ember. Sequential,
- * monotone in lightness, so it reads correctly in greyscale and for colour-blind viewers.
+ * Probability ramp: Fabio Crameri's "lajolla" scientific colour map (v8.0.1, Zenodo
+ * doi:10.5281/zenodo.1243862), read low -> high as pale straw -> ember -> charred brown.
+ * Perceptually uniform and colour-vision-deficiency safe, monotone in lightness, so it reads
+ * correctly in greyscale. Stops are lajolla at 0.9, 0.7, 0.5, 0.3, 0.1 (cmcrameri package).
+ * Transparent below 1 % so the basemap stays readable.
  */
-const PROB_STOPS: Array<[number, [number, number, number]]> = [
-  [0.0, [252, 231, 166]],
-  [0.25, [248, 170, 75]],
-  [0.5, [232, 89, 12]],
-  [0.75, [176, 42, 12]],
-  [1.0, [110, 18, 8]],
+export const PROB_STOPS: Array<[number, [number, number, number]]> = [
+  [0.0, [249, 227, 132]], // #f9e384
+  [0.25, [234, 158, 83]], // #ea9e53
+  [0.5, [217, 96, 78]], // #d9604e
+  [0.75, [125, 59, 53]], // #7d3b35
+  [1.0, [48, 33, 13]], // #30210d
 ];
 
 export function probabilityColor(p: number): RGBA {
@@ -62,28 +65,33 @@ export function probabilityColor(p: number): RGBA {
         Math.round(c0[0] + t * (c1[0] - c0[0])),
         Math.round(c0[1] + t * (c1[1] - c0[1])),
         Math.round(c0[2] + t * (c1[2] - c0[2])),
-        Math.round(140 + 115 * x), // fainter at low probability so the basemap stays readable
+        Math.round(150 + 105 * x), // fainter at low probability so the basemap stays readable
       ];
     }
   }
-  return [110, 18, 8, 255];
+  return [48, 33, 13, 255];
 }
 
-/** Actual target: detected fire cells solid ink-red, no-fire transparent, nodata hatched grey. */
+/**
+ * Observed (actual) fire: detected cells in Okabe-Ito blue (#0072B2), a hue the lajolla ramp never
+ * uses, so the observation is never mistaken for a forecast when both layers are on. No-fire
+ * cells are transparent; nodata cells a faint grey.
+ */
 export function targetColor(v: number): RGBA {
-  if (!Number.isFinite(v)) return [120, 130, 140, 90];
-  return v >= 1 ? [143, 29, 14, 255] : [0, 0, 0, 0];
+  if (!Number.isFinite(v)) return [120, 130, 125, 80];
+  return v >= 1 ? [0, 114, 178, 255] : [0, 0, 0, 0];
 }
 
 /**
  * Forecast-vs-target comparison at the fold's validation threshold (the same threshold the
  * F1/IoU metrics use): hit = both, missed = target only, false alarm = forecast only.
- * Hue-separated (teal / ember / violet) so the three classes do not rely on red-green.
+ * Okabe-Ito colours (bluish green / vermillion / reddish purple), designed to stay distinct for the
+ * common colour-vision deficiencies, so the three classes never rely on red-green.
  */
 export const COMPARISON_COLORS = {
-  hit: [29, 106, 114, 255] as RGBA,
-  missed: [232, 89, 12, 255] as RGBA,
-  falseAlarm: [124, 92, 186, 255] as RGBA,
+  hit: [0, 158, 115, 255] as RGBA, // #009E73 (observed-only blue stays reserved for the target)
+  missed: [213, 94, 0, 255] as RGBA, // #D55E00
+  falseAlarm: [204, 121, 167, 255] as RGBA, // #CC79A7
 };
 
 export function comparisonColor(p: number, y: number, threshold: number): RGBA {

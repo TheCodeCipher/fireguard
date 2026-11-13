@@ -95,12 +95,25 @@ def mock_reasons(
     cfg = yaml.safe_load(
         (ROOT / "configs" / "temporal_unet.yaml").read_text(encoding="utf-8")
     )
-    if not cfg["training"]["enabled"]:
+    # INTEGRATION (Prototype): the training gate blocks the temporal models only. An M1 run on
+    # real WSTS data is Gate 2's own evidence, so a disabled gate is not a reason to mark it mock.
+    architectures = {r.get("architecture") for r in records}
+    if not cfg["training"]["enabled"] and architectures != {"m1_spatial_unet"}:
         reasons.append(
             "configs/temporal_unet.yaml training.enabled is false (Gate 2 not recorded)"
         )
     if model_version.get("is_mock") or any(r.get("is_mock") for r in records):
         reasons.append("model_version.json or an OOF record has is_mock: true")
+    # INTEGRATION (Prototype): a run on a handful of staged events is a smoke test, not a result.
+    # Real registration needs Role 4's validation to have found every expected held-out forecast
+    # of the exported folds (coverage 1.0, written by validate_oof_and_build_reveal.py).
+    validation = run_dir / "role4_oof_validation.json"
+    if validation.exists():
+        cov = json.loads(validation.read_text(encoding="utf-8"))["oof"]["coverage"]
+        if cov < 1.0:
+            reasons.append(f"OOF coverage {cov:.4f} < 1.0 (subset or smoke run, not a full fold)")
+    else:
+        reasons.append("role4_oof_validation.json missing (Role 4 validation not run)")
     return reasons
 
 
@@ -139,7 +152,16 @@ def forecast_day_metrics(prob_path: Path, actual_path: Path, threshold: float) -
     m = summarise(
         counts_by_score(y == 1, np.where(valid, p, 0.0), valid), threshold=threshold
     )
-    return {k: float(m[k]) for k in METRIC_NAMES}
+    return {k: finite_or_none(m[k]) for k in METRIC_NAMES}
+
+
+def finite_or_none(v) -> float | None:
+    """INTEGRATION (Prototype, found on real WSTS data): a forecast day whose target has no fire
+    has no defined AUPRC (NaN). NaN is neither valid JSON nor storable in Role 5's NOT NULL
+    metric column, so an undefined metric is recorded as null in metrics.json and simply has no
+    database row. The UI then shows "not defined (no fire that day)" instead of a number."""
+    v = float(v)
+    return v if np.isfinite(v) else None
 
 
 def main() -> None:
@@ -240,7 +262,7 @@ def main() -> None:
         threshold = float(s["threshold"])
         day = forecast_day_metrics(dst_prob, dst_actual, threshold)
         event_level = {
-            k: float(v)
+            k: finite_or_none(v)
             for k, v in reveal_index[s["forecast_id"]][
                 "event_metrics_post_reveal"
             ].items()
@@ -297,11 +319,11 @@ def main() -> None:
         metric_rows = [
             {"metric_name": k, "value": v, "aggregation": "forecast_day",
              "threshold": threshold if k in ("f1", "iou") else None, "calibrator_id": calibrator_id}
-            for k, v in day.items()
+            for k, v in day.items() if v is not None
         ] + [
             {"metric_name": k, "value": v, "aggregation": "event",
              "threshold": threshold if k in ("f1", "iou") else None, "calibrator_id": calibrator_id}
-            for k, v in event_level.items()
+            for k, v in event_level.items() if v is not None
         ]  # fmt: skip
 
         entry = {

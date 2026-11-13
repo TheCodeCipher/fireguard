@@ -14,6 +14,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    // The Results page imports reports/ and docs/evidence/ from the repository root (one level
+    // up) at build time; the dev server must be allowed to read them.
+    fs: { allow: [".."] },
     proxy: { "/api": { target: apiTarget, changeOrigin: true } },
   },
   build: {

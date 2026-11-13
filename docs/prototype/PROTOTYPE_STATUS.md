@@ -10,13 +10,13 @@ trained on real data and no FireGuard metric exists yet.**
 | Suite | Command | Result |
 |---|---|---|
 | ML lint | `ruff check src tests` (in `ml/`) | clean |
-| ML tests | `pytest` (in `ml/`) | **265 passed, 1 skipped** (the skip needs `FIREGUARD_WSTS_ROOT`) |
+| ML tests | `pytest` (in `ml/`) | **268 passed, 1 skipped** (the skip needs `FIREGUARD_WSTS_ROOT`; with it set to staged real events, 42/42 in `test_wsts_dataset.py`) |
 | Scripts | `python -m compileall -q scripts` | clean |
 | Backend lint | `ruff check src tests` (in `backend/`) | clean |
 | Backend migrations | `alembic upgrade head` | head `c31f6a2b9d40` |
-| Backend tests | `pytest tests` | **61 passed** |
+| Backend tests | `pytest tests` | **62 passed** |
 | Backend runtime separation | import `fireguard.main`, check `sys.modules` | torch not imported |
-| Frontend | `npm run typecheck`, `npm test`, `npm run build` | clean, **15 passed**, build OK |
+| Frontend | `npm run typecheck`, `npm test`, `npm run build` | clean, **17 passed**, build OK |
 | End-to-end demo | `docs/evidence/integration/prototype_demo_run.json` | every stage passed on SYNTHETIC data (see 3) |
 
 Not run here: anything on the real dataset (not in this environment), GPU training, PostgreSQL, live NASA
@@ -128,7 +128,7 @@ the current split hash with the strict 7 names listed (`strict_approved: false`)
 
 | Task | Status | Evidence / what is missing |
 |---|---|---|
-| P3-R6-01..05 shell, layers, mock flow, Live monitor, map/export UX | DONE | `frontend/`, 15 tests, screenshots |
+| P3-R6-01..05 shell, layers, mock flow, Live monitor, map/export UX | DONE | `frontend/`, 17 tests, screenshots; redesigned (section 7 below), Results tab added |
 | P4-R6-01..04 real catalogue, retrieval, reveal/compare, downloads | DONE against the real API with mock artifacts | real artifacts after Gate 3 |
 | P1-R6-03 / HLS audit (with Role 1) | NOT RUN | |
 | Citizen reporting, explainability page | DEFERRED | the guide defers them until the core replay flow works |
@@ -138,13 +138,13 @@ the current split hash with the strict 7 names listed (`strict_approved: false`)
 | Gate | Status | Blocking item |
 |---|---|---|
 | G1-B leakage register, G1-D frozen P1 | READY FOR LEAD SIGN-OFF | lead |
-| Gate 2 (M1 vs strongest baseline) | NOT RUN | Role 2 M1 training + per-event file |
+| Gate 2 (M1 vs strongest baseline) | NOT RUN; now runnable | your full-data run, RUNBOOK section 5 (M1 trainer added, comparison accepts its file) |
 | Gate 3 (M3, M4, terrain) | NOT RUN | Gate 2, then Role 3 training |
 | Gate 4 (replay) | CONDITIONAL | mechanics demonstrated on mock artifacts; needs published real OOF artifacts |
 
 ## 6. Gaps that remain, with the concrete next step
 
-1. **Real numbers.** Everything in RUNBOOK section 5, then Gate 2. Owner: you (runs), Role 2 (M1).
+1. **Real numbers.** RUNBOOK sections 4 and 5 (smoke check, then M1 + Gate 2 on the full dataset). Owner: you (runs); Role 2 should review M1 (section 7).
 2. **Role 2's M1 OOF format.** Role 2's `run_spatial_oof_inference` writes a provisional format;
    Roles 1/4 and the bridge read Role 3's (`docs/temporal_oof_export_contract.md`). Simplest fix,
    for Role 2: emit `oof_forecasts.jsonl` + `model_version.json` + `post_reveal/
@@ -158,5 +158,46 @@ the current split hash with the strict 7 names listed (`strict_approved: false`)
    (please review, it is your code area); Role 1 (Ananya): section 12 of the dictionary and the
    `--out-dir` option.
 5. **Two files cited but never committed** by their owners (INTEGRATION_LOG section 7).
-6. **Not verified on Windows by me:** the PowerShell commands in RUNBOOK. They follow the repo's
-   existing conventions; report any that fail.
+6. **Not verified on Windows by me:** the PowerShell commands in RUNBOOK. The same commands were
+   run on Linux against real WSTS files copied from your machine (section 7); report any that fail.
+
+## 7. Update 2026-11-13 (second pass): real data, M1, site redesign
+
+Done with access to `C:\Users\ad\PycharmProjects\WildFireDetection` (read-only use of the
+dataset; 61 GeoTIFFs of 5 events copied into the sandbox for testing, nothing else read).
+
+**Checked.** `Prototype\` on your machine is byte-identical to the delivered package (file sizes
+and head commit `614c4ce`). The dataset is at the RUNBOOK path: `WildfireSpreadTS\WildfireSpreadTS\
+2018..2021\fire_*\YYYY-MM-DD.tif`, 23 bands, EPSG:32610.
+
+**Real-data verification (Linux, CPU).** Every step ran on real WSTS files: Role 1 release (0
+problems), training, OOF export, catalogue (0 rejected), Role 4 validation (0 metric mismatches),
+bridge, backend load, site. Two smoke runs: fold 2020 (4 events) and fold 2021 (5 events), plus
+RUNBOOK section 4 verbatim. All correctly come out mock (partial fold).
+
+**Gaps found and fixed:**
+
+| Gap | Fix | Files |
+|---|---|---|
+| No M1 training loop existed anywhere, so Gate 2 could never run | `SpatialUNet` (`m1_spatial_unet`) = the shared U-Net with T=1; trains/exports/validates through the existing Role 3 code; not blocked by `training.enabled` (which gates M3/M4) | `ml/.../models/temporal_unet.py`, `scripts/train_temporal.py`, `configs/temporal_unet.yaml` |
+| Real-data AUPRC is NaN on no-fire days; the backend NOT NULL metric column rejected the whole load | undefined metric = `null` in metrics.json, no DB row; UI shows n/a | `scripts/build_backend_registry.py`, `backend/scripts/load_registry_bundle.py` |
+| A 4-event smoke run registered as `"mode": "real"` once M1 was allowed | OOF coverage < 1.0 is a mock reason | `scripts/build_backend_registry.py` |
+| Training printed nothing until a fold finished (hours on real data) | progress every 500 samples + per epoch | `ml/.../training/temporal_trainer.py` |
+| RUNBOOK real-run section skipped the Role 1 release the catalogue needs, and had no M1 path | rewritten as sections 4 to 7 | `docs/prototype/RUNBOOK.md` |
+
+**M1 choice, for Role 2 to confirm.** M1 is the same encoder/decoder as M3 with one input day, so
+M1 vs M3 changes only T (clean H1 test). Role 2's `models/unet.py` is untouched; if they prefer it,
+it can be registered under the same `model_type`. This is the "train M1 through Role 3's trainer
+at T=1" option already proposed in gap 2, which it also closes (M1 now uses the shared OOF format).
+
+**Site redesign** (`frontend/`): five tabs (Overview, Replay lab, Results, Live monitor, Method).
+Palette from published sources: USFS Shield Green #005838 / Shield Brown #6A5147 / Shield Gold
+#FFD51D for the interface; Crameri *lajolla* (scientific, colour-blind safe) for probability;
+Okabe-Ito for observed fire and hit/miss classes. Source Serif 4 + Public Sans. The Overview hero
+is real VIIRS detections of fire_25294989 (no model output); the Results tab reads Role 4's
+committed reports at build time and shows "not run" for anything not evaluated. Basemap: CARTO
+Positron + Esri hillshade (needs internet; layers draw without it). Screenshots in
+`docs/prototype/screenshots/`.
+
+Tests: ML 268 + 1 skip (3 new for M1, 1 updated), backend 62 (1 new: null metric), frontend 17
+(2 new: Results never invents numbers; 1 updated: banner wording).

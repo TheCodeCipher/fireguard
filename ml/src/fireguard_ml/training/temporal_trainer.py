@@ -249,6 +249,10 @@ def train_fold(
 
     seed_everything(cfg.seed)
     loss_fn, loss_impl = resolve_loss()
+    # PROTOTYPE: progress lines, so a multi-hour real run is visibly alive. The first pass reads
+    # every training frame once to fit the per-fold normaliser (no model work yet).
+    print(f"[{cfg.run_name()} fold {fold}] {len(train_keys)} train / {len(val_keys)} validation "
+          f"samples on {device}; fitting normaliser on the training frames...", flush=True)
     norm = fit_normalizer(source, train_keys, train_ev, fold, split_hash)
     model = build_model(cfg).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
@@ -290,6 +294,9 @@ def train_fold(
                 scaler.step(opt)
                 scaler.update()
                 opt.zero_grad(set_to_none=True)
+            if i % 500 == 0 and losses:
+                print(f"  epoch {epoch}: {i}/{len(order)} samples, "
+                      f"loss {np.mean(losses[-500:]):.4f}, {time.time() - t0:.0f}s", flush=True)
         val = score_split(model, source, norm, val_keys, device, cfg.depth, cfg.amp)
         val_sum = summarise(val["pooled"].counts())
         rec = {
@@ -304,6 +311,7 @@ def train_fold(
         }
         with log_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(rec) + "\n")
+        print(f"  epoch {epoch} done: {json.dumps(rec)}", flush=True)
         if val_sum["auprc"] > best["auprc"]:
             best = {
                 "auprc": val_sum["auprc"],

@@ -159,7 +159,28 @@ class ConvLSTMUNet(_TemporalBase):
         return self.dec(h_last, last_skips)
 
 
+class SpatialUNet(StackedDaysUNet):
+    """M1: the spatial U-Net, i.e. day D only (T = 1) through the same encoder/decoder as M3.
+
+    INTEGRATION (Prototype, 2026-11-13). Gate 2 needs a trained M1, and no M1 training loop
+    existed on any branch (Role 2 delivered the model, padding, loss and export code, not a
+    trainer). Rather than write a second trainer, M1 is the shared U-Net with a one-day input, so
+    it trains, checkpoints, exports and is validated through exactly the same code as M3/M4.
+    That also makes the H1 comparison (does temporal context help?) a clean one-variable change:
+    M1 vs M3 differ only in T. Role 2 owns M1: if they prefer their own ``models/unet.py``
+    (4-level, GroupNorm, base 16), swap it in here and keep ``model_type``.
+    """
+
+    model_type = "m1_spatial_unet"
+
+    def __init__(self, c_strict: int, T: int = 1, base: int = 32, depth: int = 5):
+        if T != 1:
+            raise ValueError("M1 is spatial: it takes exactly one input day (T=1)")
+        super().__init__(c_strict, 1, base, depth)
+
+
 MODEL_REGISTRY = {
+    SpatialUNet.model_type: SpatialUNet,
     StackedDaysUNet.model_type: StackedDaysUNet,
     ConvLSTMUNet.model_type: ConvLSTMUNet,
 }
