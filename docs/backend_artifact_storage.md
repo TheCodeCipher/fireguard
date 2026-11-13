@@ -1,7 +1,7 @@
 # FireGuard Backend Artifact Registry and Storage
 
-**Owner:** Role 5 — Backend / MLOps  
-**Phase:** 3 and 4  
+**Owner:** Role 5 — Backend / MLOps
+**Phase:** 3 and 4
 **Status:** Implementation contract; real OOF artifacts remain unpublished until the frozen split/model metadata and files pass validation.
 
 ## 1. Serving boundary

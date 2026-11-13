@@ -1,7 +1,7 @@
 # FireGuard Replay API Contract — Phase 4
 
-**Owner:** Role 5 — Backend / MLOps  
-**Version:** 1.0  
+**Owner:** Role 5 — Backend / MLOps
+**Version:** 1.0
 **Boundary:** retrieve-only static OOF replay. No model inference in FastAPI.
 
 Every request after session creation sends `X-Replay-Session-ID`. All origins are backed by OOF runs and a published probability artifact. Synthetic mock artifacts are visible only when `FIREGUARD_APP_ENV=development` and are always identified as mock.

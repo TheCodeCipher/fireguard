@@ -1,7 +1,7 @@
 # Phase 4 OOF Artifact Manifest Contract
 
-**Version:** 1.0  
-**Owner:** Role 5 — Backend / MLOps  
+**Version:** 1.0
+**Owner:** Role 5 — Backend / MLOps
 **Purpose:** Bind precomputed static artifacts to one frozen, held-out OOF forecast run.
 
 ## 1. Manifest structure
