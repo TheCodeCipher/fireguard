@@ -31,7 +31,7 @@
 | Brief says | What I did | Why |
 |---|---|---|
 | "Inspect the raw HDF5 channel arrays" | Audited the released GeoTIFFs (13,607 files, 1,363 sampled) | The HDF5 is a conversion of these same rasters, so the values are the same and the GeoTIFFs carry the band order the creation code writes. Flag it if the team wants the HDF5 path checked separately. |
-| "Work from actual channel indices/names supplied by Role 1" | Used `docs/wsts_data_dictionary.md` and cross-checked against the export order in `FirePred.py` lines 125-131 | The two sources agree, and Role 1 confirmed the GFS indices against the data dictionary on 2026-11-13 (no differences). |
+| "Work from actual channel indices/names supplied by Role 1" | Used `docs/data_dictionary.md` and cross-checked against the export order in `FirePred.py` lines 125-131 | The two sources agree, and Role 1 confirmed the GFS indices against the data dictionary on 2026-11-13 (no differences). |
 | Commit `outputs/gfs_wind_direction_histogram.png` and `outputs/gfs_channel_range_summary.csv` | Committed copies under `docs/evidence/` | The repository's `.gitignore` excludes `outputs/`. The guide and the `.gitignore` contradict each other; this resolves it without changing either. |
 | "representative unique/sample values" | Covered by the percentile table plus the histogram reading in audit section 8.2 (the distribution is folded, not clipped) | A unique-value listing is not meaningful for a continuous float channel; the clipped-versus-folded question is what that check exists to answer. |
 

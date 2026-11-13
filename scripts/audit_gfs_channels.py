@@ -37,7 +37,7 @@ EXPECTED_BANDS = 23
 PCTS = [1, 5, 25, 50, 75, 95, 99]
 
 # name: (original 0-based index, 1-based rasterio band, processed loader index)
-# Source: docs/wsts_data_dictionary.md sections 3 and 4.
+# Source: docs/data_dictionary.md sections 3 and 4.
 CHANNELS = {
     "gridmet_wind_speed": (6, 7, 6),
     "gridmet_wind_direction": (7, 8, 7),
@@ -315,7 +315,7 @@ def build_report(ctx):
     A(f"- Files sampled: {ctx['n_files']} of {ctx['n_total']} TIFFs (every {ctx['every']}th per year, years: {', '.join(map(str, sorted(year_acc)))}).")
     A(f"- Files skipped: {len(ctx['skipped'])}." + (" Reasons: " + "; ".join(f"{p.name}: {r}" for p, r in ctx['skipped'][:5]) if ctx['skipped'] else ""))
     A(f"- Pixels used for percentiles/histogram: random sample of up to {ctx['k']} finite pixels per file per channel. Min, max, mean and NaN counts are exact over all sampled files.")
-    A("- Schema: `docs/wsts_data_dictionary.md` (Role 1's artifact, pinned baseline commit f62dc49). Creation code: SebastianGer/WildfireSpreadTSCreateDataset (`FirePred.py`).")
+    A("- Schema: `docs/data_dictionary.md` (Role 1's artifact, pinned baseline commit f62dc49). Creation code: SebastianGer/WildfireSpreadTSCreateDataset (`FirePred.py`).")
     A("- Every schema fact this audit relies on was also checked against the export order in `FirePred.py` lines 125-131, so the conclusions do not rest on the data dictionary alone. **Role 1 confirmed on 2026-11-13** that all five GFS channels match the data dictionary (raw 17-21, GeoTIFF bands 18-22, processed 33-37; no index or ordering differences), and that the manifest will mark processed 33-37 excluded from strict M1-M4.")
     A("")
     A("## 2. Channel identity")

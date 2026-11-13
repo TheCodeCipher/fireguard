@@ -36,7 +36,7 @@ except ModuleNotFoundError as exc:  # the package is not installed in this inter
     ) from exc
 
 EXPECTED_BANDS = 23
-GFS_BANDS_0BASED = [17, 18, 19, 20, 21]  # docs/wsts_data_dictionary.md; verified against FirePred.py band order
+GFS_BANDS_0BASED = [17, 18, 19, 20, 21]  # docs/data_dictionary.md; verified against FirePred.py band order
 DATE_RE = re.compile(r"(\d{4})-(\d{2})-(\d{2})")
 
 

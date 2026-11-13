@@ -45,8 +45,6 @@ Full suite: from the repo root, `pip install -e "ml[dev]"` then `cd ml && pytest
 | (not mentioned) | Added `ml/pyproject.toml` and `.github/workflows/ml-ci.yml` | Without package metadata the test suite could not be collected at all, and nothing in CI covered `ml/`. Both mirror `backend/`. |
 | "Confirm tensor dimensions with synthetic input and one real sample batch" | Both done; the real-sample script deliberately selects a window whose target day contains fire | Each event begins with quiet buffer days, so the first valid window has an all-negative target and would not exercise the target decoding. |
 
-Dangling reference, for Role 1: `docs/wsts_data_dictionary.md` is cited by the audit, the input contract and two scripts, but is not in the repository. Every schema fact was cross-checked against `FirePred.py`, so nothing depends on it alone.
-
 ## 3. Dataset and source decisions
 - Verified: frame order (oldest to newest) and target definition from the pinned loader code; UTC day boundary from the creation code.
 - Assumed: `T = 5` input days (plan v4 working candidate).
