@@ -1,0 +1,64 @@
+# FireGuard evaluation configuration (Role 4). Contract: docs/metrics_contract.md and
+# docs/evaluation_protocol.md. Every model and baseline result must be produced with this file
+# unchanged; record its sha256 in the run config alongside the P1 manifest hash.
+
+protocol: P1
+manifests:
+  folds: data/manifests/p1_loyo_fold_manifest.csv
+  hashes: data/manifests/p1_split_hashes.txt
+  eval_samples: data/manifests/wsts_eval_samples.csv
+leakage_register: docs/leakage_audit.csv
+
+samples:
+  # 0-based position (in the date-sorted TIFF list of an event) of the first target frame.
+  # 5 = the five leading input days of the temporal contract (configs/temporal_unet.yaml), so
+  # one-day models, baselines and five-day models are all scored on identical (event, day) pairs.
+  first_target_index: 5
+  target: "active-fire band of day D+1 > 0 after NaN -> 0 (official loader binarisation)"
+  valid_mask: in_frame  # every original cell; padding added by models must be masked out
+
+metrics:
+  primary: auprc
+  secondary: [f1, iou]
+  probability: [brier, brier_skill_score, ece_equal_mass]
+  ece_bins: 15
+  reporting: [pooled, event_macro]
+  bss_reference: distance_bin_climatology  # fitted on the same fold's training groups
+  bootstrap:
+    unit: fire_complex_group  # never pixels
+    statistic: mean_per_event_difference
+    n_boot: 2000
+    ci: 0.95
+    seed: 0
+
+thresholds:
+  select_on: validation
+  rule: max_f1
+calibration:
+  method: platt_on_logit
+  fit_on: validation
+  per_fold: true
+
+baselines:
+  persistence:
+    enabled: true
+    metrics: [f1, iou]  # binary map: AUPRC is degenerate and not reported
+  dilated_persistence:
+    enabled: true
+    metrics: [f1, iou]
+    radius_km_candidates: [0.375, 0.75, 1.5, 3.0]
+    select_on: validation
+    select_by: f1
+  distance_decay:
+    enabled: true
+    scale_km_candidates: [0.25, 0.5, 1.0, 2.0, 4.0, 8.0]
+    select_on: validation
+    select_by: brier  # amplitude fitted in closed form per scale; AUPRC is unaffected by either
+  distance_bin_climatology:
+    enabled: true
+    fit_on: train
+    edges_km: [0.0, 0.375, 0.75, 1.5, 3.0, 5.0, 10.0, 20.0, 50.0]
+    prior_strength: 1.0
+  downwind_decay:
+    enabled: false
+    reason: no wind direction has passed both the encoding and the Level-A timing audit
