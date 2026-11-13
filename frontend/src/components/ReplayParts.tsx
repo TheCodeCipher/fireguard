@@ -36,13 +36,17 @@ export function RasterCanvas({
   );
 }
 
-/** Banner shown on every replay built from synthetic data or a plumbing run. */
+/**
+ * Banner shown on every mock replay. PROTOTYPE: worded for all three mock causes the bridge
+ * (scripts/build_backend_registry.py) can record - synthetic pixels, a plumbing/smoke training
+ * budget, or a run covering only part of a fold - since a real-data smoke run is now possible.
+ */
 export function MockBanner() {
   return (
     <div className="mock-banner" role="note">
-      <strong>Synthetic demonstration.</strong> This replay was produced from generated pixels
-      and an untrained plumbing model to show the pipeline working end to end. It is not a
-      FireGuard forecast and its numbers are not results.
+      <strong>Not a FireGuard result.</strong> This replay comes from a test run (synthetic data, a
+      smoke-test training budget, or only part of a fold). It shows the pipeline working end to
+      end; its forecast and numbers are not results.
     </div>
   );
 }
@@ -99,7 +103,7 @@ export function MetricsTable({ metrics }: { metrics: ReplayMetric[] }) {
   const value = (name: string, agg: string) =>
     metrics.find((m) => m.metric_name === name && m.aggregation === agg);
   const fmt = (m?: ReplayMetric) => {
-    if (!m) return "–";
+    if (!m) return "n/a";
     if (m.metric_name === "n_pos" || m.metric_name === "n_valid") return Math.round(m.value).toLocaleString();
     return m.value.toFixed(3);
   };
@@ -120,14 +124,14 @@ export function MetricsTable({ metrics }: { metrics: ReplayMetric[] }) {
           {METRIC_ORDER.map((name) => (
             <tr key={name}>
               <th scope="row">{METRIC_LABELS[name]}</th>
-              <td>{fmt(value(name, "forecast_day"))}</td>
-              <td>{fmt(value(name, "event"))}</td>
+              <td className={value(name, "forecast_day") ? undefined : "na"}>{fmt(value(name, "forecast_day"))}</td>
+              <td className={value(name, "event") ? undefined : "na"}>{fmt(value(name, "event"))}</td>
             </tr>
           ))}
         </tbody>
       </table>
       <p className="fine">
-        F1 and IoU use the threshold {threshold !== undefined && threshold !== null ? threshold.toFixed(3) : "–"} fitted
+        n/a: not defined for this forecast (AUPRC needs at least one fire cell that day). F1 and IoU use the threshold {threshold !== undefined && threshold !== null ? threshold.toFixed(3) : "–"} fitted
         on this fold's validation events ({calibrator ?? "no calibrator id"}); the held-out year was never used to choose it.
       </p>
     </div>

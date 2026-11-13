@@ -145,6 +145,10 @@ def replace_metrics(run_id: int, rows: list[dict[str, Any]]) -> None:
     with SessionLocal() as db:
         db.execute(delete(ReplayMetric).where(ReplayMetric.forecast_run_id == run_id))
         for r in rows:
+            # INTEGRATION (Prototype): undefined metrics (e.g. AUPRC on a no-fire day) arrive as
+            # null and get no row; the column is NOT NULL and NaN is not a metric value.
+            if r["value"] is None:
+                continue
             db.add(
                 ReplayMetric(
                     forecast_run_id=run_id,

@@ -233,3 +233,17 @@ def test_real_bundle_without_level_a_pass_is_refused_by_role5(env):
     bundle = _bundle(tmp, artifact_root, mode="real", time_safety="STRICT_LEVEL_A_PASS")
     with pytest.raises(RegistryValidationError, match="PASS_LEVEL_A"):
         loader.load(bundle, publish=False)
+
+
+def test_undefined_metric_gets_no_row(env):
+    """INTEGRATION (Prototype): found on real WSTS data. A forecast day with no fire has no
+    AUPRC; the bridge writes it as null and the loader must skip it (the column is NOT NULL)."""
+    loader, session, artifact_root, tmp = env
+    bundle = _bundle(tmp, artifact_root, mode="mock")
+    doc = json.loads(bundle.read_text())
+    doc["forecasts"][0]["metrics"][0]["value"] = None
+    bundle.write_text(json.dumps(doc))
+    loader.load(bundle, publish=False)
+    with session() as db:
+        rows = db.scalars(select(ReplayMetric)).all()
+        assert [r.metric_name for r in rows] == ["f1"]

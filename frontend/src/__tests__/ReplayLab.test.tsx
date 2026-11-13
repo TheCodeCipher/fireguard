@@ -118,6 +118,7 @@ describe("ReplayLab", () => {
     render(<ReplayLab />);
     fireEvent.change(await screen.findByLabelText("Fire event"), { target: { value: E } });
     fireEvent.click(await screen.findByRole("button", { name: "05-12" }));
-    expect(await screen.findByText(/Synthetic demonstration\./)).toBeInTheDocument();
+    // PROTOTYPE: banner reworded for all mock causes (synthetic, smoke budget, partial fold)
+    expect(await screen.findByText(/Not a FireGuard result\./)).toBeInTheDocument();
   });
 });

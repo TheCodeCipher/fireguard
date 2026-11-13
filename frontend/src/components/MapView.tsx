@@ -39,26 +39,44 @@ interface Props {
 
 const userStyle = import.meta.env.VITE_BASEMAP_STYLE as string | undefined;
 
-/** Desaturated OSM basemap so the data colours carry the meaning, not the background. */
+/**
+ * Basemap: CARTO Positron (light, label-free) with Esri World Hillshade at low opacity, then
+ * Positron's labels on top. Pale and grey so the data colours carry the meaning; the hillshade
+ * adds the terrain a wildfire runs over. Both services are free for non-commercial use with the
+ * attribution shown. If the tiles cannot load (offline), the plain background still lets every
+ * forecast layer draw. Override with VITE_BASEMAP_STYLE (a MapLibre style URL).
+ */
 const DEFAULT_STYLE: StyleSpecification = {
   version: 8,
   sources: {
-    osm: {
+    base: {
       type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tiles: ["https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"],
       tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
-      maxzoom: 18,
+      attribution: "© OpenStreetMap contributors © CARTO",
+      maxzoom: 19,
+    },
+    hillshade: {
+      type: "raster",
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      attribution: "Hillshade © Esri",
+      maxzoom: 16,
+    },
+    labels: {
+      type: "raster",
+      tiles: ["https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      maxzoom: 19,
     },
   },
   layers: [
-    { id: "background", type: "background", paint: { "background-color": "#dfe5e9" } },
-    {
-      id: "osm",
-      type: "raster",
-      source: "osm",
-      paint: { "raster-saturation": -0.75, "raster-opacity": 0.85, "raster-contrast": -0.1 },
-    },
+    { id: "background", type: "background", paint: { "background-color": "#eceee9" } },
+    { id: "base", type: "raster", source: "base" },
+    { id: "hillshade", type: "raster", source: "hillshade", paint: { "raster-opacity": 0.28 } },
+    { id: "labels", type: "raster", source: "labels" },
   ],
 };
 
@@ -123,7 +141,8 @@ export function MapView({ overlays = [], points, fitBounds, watermark, pointPopu
             source: id,
             // Nearest-neighbour: one WSTS cell stays one visible square (no invented detail).
             paint: { "raster-resampling": "nearest", "raster-fade-duration": 0 },
-          });
+          // Under the place labels when the default basemap is in use, so names stay legible.
+          }, map.getLayer("labels") ? "labels" : undefined);
         }
         map.setPaintProperty(id, "raster-opacity", o.opacity);
         map.setLayoutProperty(id, "visibility", o.visible ? "visible" : "none");
@@ -152,12 +171,13 @@ export function MapView({ overlays = [], points, fitBounds, watermark, pointPopu
               "circle-color": [
                 "match",
                 ["get", "confidence"],
-                "high", "#8f1d0e",
-                "nominal", "#e8590c",
-                "low", "#f8aa4b",
-                "#7a8794",
+                // ordinal confidence on the lajolla ramp (dark = high), grey = not reported
+                "high", "#7d3b35",
+                "nominal", "#d9604e",
+                "low", "#f0bd57",
+                "#8a938d",
               ],
-              "circle-stroke-color": "#1b2836",
+              "circle-stroke-color": "#1c2420",
               "circle-stroke-width": 0.6,
             },
           });

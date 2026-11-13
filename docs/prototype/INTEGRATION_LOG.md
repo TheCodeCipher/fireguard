@@ -136,3 +136,28 @@ stay in `origin/role2` history. Role 2's starter docs moved to `docs/role2/`.
   Role 1) and `data/manifests/wsts_event_fire_cells.csv.gz` (1.7 MB, Role 4). Both are compact
   derived manifests their owners committed, not raw data; kept. No raster, checkpoint, database,
   `.env` or key is tracked (checked on the final commit).
+
+## 8. Second pass (2026-11-13): real-data path, M1, site redesign
+
+Summary and the gap table are in `PROTOTYPE_STATUS.md` section 7. Every changed line carries an
+`INTEGRATION (Prototype)` or `PROTOTYPE` comment. Files:
+
+- ADDED `ml/src/fireguard_ml/tests/test_m1_spatial.py`, `frontend/src/pages/Results.tsx`,
+  `frontend/src/lib/results.ts`, `frontend/src/__tests__/results.test.tsx`,
+  `frontend/src/assets/fire_25294989_*.png` (4 small PNGs of real VIIRS detections).
+- UPDATED (Role 3, yours): `models/temporal_unet.py` (SpatialUNet), `training/temporal_trainer.py`
+  (progress lines), `scripts/train_temporal.py` (M1 choice, gate applies to M3/M4),
+  `configs/temporal_unet.yaml` (m1 entry), `tests/test_temporal_models.py` (M1 at T=1).
+- UPDATED (integration bridge): `scripts/build_backend_registry.py` (null metrics, coverage
+  rule, M1 not gated).
+- UPDATED (Role 5, small and marked): `backend/scripts/load_registry_bundle.py` skips null
+  metrics; `backend/tests/integration/test_registry_bundle_loader.py` one new test.
+- UPDATED (Role 6): `index.html`, `styles.css` (rewritten), `App.tsx`, `pages/InfoPages.tsx`,
+  `pages/ReplayLab.tsx` (markup only, logic unchanged), `pages/LiveMonitor.tsx` (title),
+  `components/ReplayParts.tsx` (banner wording, n/a), `components/MapView.tsx` (basemap, point
+  colours), `lib/raster.ts` (lajolla + Okabe-Ito), `vite.config.ts` (fs.allow), one test string.
+- UPDATED docs: `RUNBOOK.md` sections 4 to 8, `PROTOTYPE_STATUS.md`, `frontend/README.md`,
+  screenshots.
+
+Decision: M1 as T=1 of the shared U-Net rather than a second trainer (one code path, and the M1 vs
+M3 comparison changes one variable). Role 2's own `UNet` is untouched and can replace it later.

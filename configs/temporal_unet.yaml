@@ -35,6 +35,13 @@ data:
   eval_samples: data/manifests/wsts_eval_samples.csv
 
 models:
+  # INTEGRATION (Prototype): M1 = the same U-Net on day D only (T = 1). It is the Gate 2 model, so
+  # it is NOT blocked by training.enabled below (that flag gates the temporal models M3/M4, which
+  # may only be trained once M1 has passed Gate 2). See models/temporal_unet.py:SpatialUNet.
+  m1:
+    model_type: m1_spatial_unet
+    base: 32
+    depth: 5
   m3:
     model_type: m3_stacked_unet
     base: 32
@@ -56,6 +63,7 @@ ablation:
 training:
   # Pipeline implemented and tested on synthetic data. Stays false until Gate 2 (M1 beats the
   # baselines) is recorded and Role 1's WSTS sample source exists (P3-R1-05).
+  # INTEGRATION: gates M3/M4 only. M1 (Gate 2's own evidence) trains on real data regardless.
   enabled: false
   optimizer: adamw
   lr: 1.0e-3

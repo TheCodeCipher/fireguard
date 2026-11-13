@@ -11,6 +11,7 @@ nothing depends on that choice.
 |---|---|---|
 | Overview | P2-R6-01, P4-R6-04 | What FireGuard forecasts, what it does not do, current status |
 | Replay lab | P3-R6-01..03/05, P4-R6-01..04 | Choose fire and day, load the out-of-fold forecast, reveal the observed fire, compare, scores, provenance, downloads |
+| Results | P4-R6-04 (added in the redesign) | Gate verdicts and test AUPRC per fold, read at build time from `reports/phase3/` and `docs/evidence/role4/` (`src/lib/results.ts`); unrun models show "not run" |
 | Live monitor | P2-R6-02, P3-R6-04 | NASA FIRMS detections through the backend proxy, per satellite/product, observation only |
 | Method | P2-R6-03, P4-R6-04 | Inputs, models, evaluation protocol, why the target is sealed, data sources |
 
@@ -61,9 +62,30 @@ them with geotiff.js (`src/lib/raster.ts`) and draws them twice:
   not exactly a lon/lat quad);
 - in the pixel views, one WSTS cell per canvas pixel, which is the exact grid the metrics use.
 
-Probability uses a sequential straw-to-ember ramp, with cells below 1 % left clear. The
-comparison view uses the fold's validation threshold (the same one behind F1/IoU) and three
-hue-separated classes that do not rely on red versus green.
+Probability uses Fabio Crameri's *lajolla* scientific colour map (perceptually uniform,
+colour-blind safe), with cells below 1 % left clear. Observed fire is Okabe-Ito blue, a hue the
+ramp never uses. The comparison view uses the fold's validation threshold (the same one behind
+F1/IoU) and three Okabe-Ito classes (bluish green / vermillion / reddish purple).
+
+## Design (Prototype redesign, 2026-11-13)
+
+| Token | Value | Source / role |
+|---|---|---|
+| forest | `#005838` | USFS Shield Green: the only action colour (buttons, active tab, focus) |
+| bark | `#6A5147` | USFS Shield Brown: figure numbers |
+| gold | `#FFD51D` | USFS Shield Gold: "not a result" flags only |
+| paper / surface / ink | `#F3F5F2` / `#FFFFFF` / `#1C2420` | neutral, slightly green grey |
+| data | lajolla + Okabe-Ito | never taken from the UI palette |
+
+Type: Source Serif 4 (titles, wordmark) and Public Sans (everything else), from Google Fonts.
+Basemap: CARTO Positron + Esri World Hillshade (free non-commercial use with attribution); set
+`VITE_BASEMAP_STYLE` to use another style. Without internet the map background is plain and the
+data layers still draw.
+
+The Overview hero (`src/assets/fire_25294989_*.png`) is real observation data, not a forecast:
+band 23 (VIIRS active fire) of WSTS `2021/fire_25294989`, days 07-07, 07-08, 07-10, 07-12, cropped
+to rows 146-297 and columns 41-227, each cell 3x3 px; dark `#7d3b35` = detected that day, pale
+`#f0bd57` (alpha 170) = detected on an earlier day of 07-07..07-12. Made with rasterio + Pillow.
 
 ## Layout
 
@@ -74,7 +96,9 @@ src/
   lib/raster.ts, lib/geo.ts       GeoTIFF decoding, colour maps, georeferencing
   components/MapView.tsx          MapLibre map: raster overlays and FIRMS points
   components/ReplayParts.tsx      pixel canvas, legends, metrics table, provenance, mock banner
-  pages/ReplayLab.tsx, LiveMonitor.tsx, InfoPages.tsx
+  lib/results.ts                  build-time reader for Role 4's reports (Results + Overview)
+  pages/ReplayLab.tsx, Results.tsx, LiveMonitor.tsx, InfoPages.tsx
+  assets/                         Overview hero images (real VIIRS detections)
   App.tsx, main.tsx, styles.css
   __tests__/                      Vitest + Testing Library
 ```

@@ -1,5 +1,6 @@
 /**
- * Forecast & Replay Lab (Role 6, P3-R6-01..05 and P4-R6-01..04).
+ * Forecast & Replay Lab (Role 6, P3-R6-01..05 and P4-R6-01..04). Restyled in the Prototype
+ * redesign (cards, captions, "not a result" wording); the replay logic is unchanged.
  *
  * Replays a held-out WSTS event day: the user loads the precomputed out-of-fold forecast first,
  * and only then may reveal what the satellite actually detected the next day. All data comes
@@ -224,6 +225,7 @@ export function ReplayLab() {
   return (
     <div className="replay">
       <aside className="steps" aria-label="Replay steps">
+        <h1 className="rail-title">Replay lab</h1>
         <p className="domain-note">
           Historical replay of western-US wildfires from the WildfireSpreadTS benchmark (2018–2021). Each
           forecast was made by a model that never saw this fire during training.
@@ -249,7 +251,7 @@ export function ReplayLab() {
                 <option value="">Select an event…</option>
                 {events.map((e) => (
                   <option key={e.event_id} value={e.event_id}>
-                    {e.event_id}, {e.year}
+                    {e.event_id} ({e.year})
                   </option>
                 ))}
               </select>
@@ -275,7 +277,7 @@ export function ReplayLab() {
               </div>
             ) : null}
             {origins && origins.length > 0 ? (
-              <p className="fine">Each button is the day being forecast, using the five days before it.</p>
+              <p className="fine">Each button is the day being forecast, from the days before it.</p>
             ) : null}
           </li>
 
@@ -284,7 +286,7 @@ export function ReplayLab() {
             {origin && state.inputs ? (
               <p className="fine">
                 Inputs: {String(state.inputs.input_metadata.channel_manifest ?? "strict channel list")}, from the
-                five days up to {origin.origin_date}.
+                days up to {origin.origin_date}.
               </p>
             ) : null}
             <button type="button" className="primary" disabled={!canLoadForecast(state)} onClick={loadForecast}>
@@ -318,11 +320,11 @@ export function ReplayLab() {
           ariaLabel="Map of the forecast and, after reveal, the observed fire"
           overlays={overlays}
           fitBounds={corners ? cornersBounds(corners) : null}
-          watermark={mock ? "Synthetic demonstration" : null}
+          watermark={mock ? "Not a FireGuard result" : null}
         />
 
         {prob ? (
-          <div className="layer-controls" role="group" aria-label="Map layers">
+          <div className="layer-controls card" role="group" aria-label="Map layers">
             <label>
               <input
                 type="checkbox"
@@ -368,7 +370,7 @@ export function ReplayLab() {
 
         {painted ? (
           <div className="pixel-views">
-            <figure>
+            <figure className="card">
               <RasterCanvas
                 width={painted.width}
                 height={painted.height}
@@ -376,12 +378,12 @@ export function ReplayLab() {
                 label="Forecast probability, native grid"
               />
               <figcaption>
-                Forecast for {origin?.target_date}
+                <strong>Forecast for {origin?.target_date}</strong>
                 <ProbabilityLegend />
               </figcaption>
             </figure>
 
-            <figure className={state.stage === "revealed" ? "revealed" : "sealed"}>
+            <figure className={state.stage === "revealed" ? "card revealed" : "card sealed"}>
               {state.stage === "revealed" && painted.actRgba ? (
                 <RasterCanvas
                   width={painted.width}
@@ -394,11 +396,20 @@ export function ReplayLab() {
                   <span>Sealed. Make your own read of the forecast, then reveal.</span>
                 </div>
               )}
-              <figcaption>Observed by VIIRS on {origin?.target_date}</figcaption>
+              <figcaption>
+                <strong>Observed by VIIRS on {origin?.target_date}</strong>
+                {state.stage === "revealed" ? (
+                  <span className="key">
+                    <i style={{ background: "#0072b2" }} /> detected fire cell
+                  </span>
+                ) : (
+                  "Unlocks with the reveal."
+                )}
+              </figcaption>
             </figure>
 
             {state.stage === "revealed" && painted.cmpRgba ? (
-              <figure>
+              <figure className="card">
                 <RasterCanvas
                   width={painted.width}
                   height={painted.height}
@@ -406,7 +417,7 @@ export function ReplayLab() {
                   label="Comparison of forecast and observed fire at the fold threshold"
                 />
                 <figcaption>
-                  At threshold {threshold?.toFixed(3)}
+                  <strong>Hits and misses at threshold {threshold?.toFixed(3)}</strong>
                   <ComparisonLegend counts={painted.counts} />
                 </figcaption>
               </figure>
@@ -420,12 +431,12 @@ export function ReplayLab() {
 
         {forecast ? (
           <div className="details">
-            <section aria-label="Provenance">
+            <section className="card" aria-label="Provenance">
               <h3>Where this forecast came from</h3>
               <ProvenanceList provenance={{ ...forecast.provenance, time_safety_status: forecast.time_safety_status }} />
             </section>
 
-            <section aria-label="Scores">
+            <section className="card" aria-label="Scores">
               <h3>Scores</h3>
               {state.stage === "revealed" && state.metrics ? (
                 <MetricsTable metrics={state.metrics} />
@@ -434,7 +445,7 @@ export function ReplayLab() {
               )}
             </section>
 
-            <section aria-label="Downloads">
+            <section className="card" aria-label="Downloads">
               <h3>Downloads</h3>
               <div className="downloads">
                 {prob && session ? (

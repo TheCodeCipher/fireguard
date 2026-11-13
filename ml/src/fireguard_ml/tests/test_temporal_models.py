@@ -136,8 +136,9 @@ def test_strict_config_is_consistent_with_the_models():
     # processed loader indices of the five forecast channels (docs/data_dictionary.md)
     assert cfg["data"]["excluded_processed_indices"] == [33, 34, 35, 36, 37]
     assert cfg["training"]["enabled"] is False  # Phase 2 delivers interfaces, not training runs
-    t = cfg["data"]["n_leading_observations"]
     for m in cfg["models"].values():
+        # INTEGRATION (Prototype): M1 is the one-day model (T=1); M3/M4 use the config's T.
+        t = 1 if m["model_type"] == "m1_spatial_unet" else cfg["data"]["n_leading_observations"]
         kwargs = {k: v for k, v in m.items() if k != "model_type"}
         assert 2 ** kwargs["depth"] == cfg["data"]["pad_multiple"]
         model = MODEL_REGISTRY[m["model_type"]](c_strict=C, T=t, **kwargs)

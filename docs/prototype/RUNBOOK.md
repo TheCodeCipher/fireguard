@@ -64,8 +64,8 @@ npm run build
 cd $P
 ```
 
-Expected: see `PROTOTYPE_STATUS.md` section 1 (ML 265 passed + 1 skipped, backend 61 passed,
-frontend 15 passed). The one ML skip runs on real data with
+Expected: see `PROTOTYPE_STATUS.md` section 1 (ML 268 passed + 1 skipped, backend 62 passed,
+frontend 17 passed). The one ML skip runs on real data with
 `$env:FIREGUARD_WSTS_ROOT = $WSTS`.
 
 ## 3. Demo on synthetic data (about 5 minutes on a laptop CPU)
@@ -105,63 +105,95 @@ Live monitor: add `FIRMS_MAP_KEY=<your key>` to `backend\.env` (create it from
 `backend\.env.example`) and restart uvicorn. Without a key the page offers the backend's labelled
 four-point fixture.
 
-## 4. Real-data plumbing check (optional, before Gate 2)
+## 4. Real data: two-minute smoke check (do this first)
 
-Same chain on a few real events; still forced to mock in the backend because training is gated.
+Runs every role's code on five real WSTS events (fold 2021, one tiny model) to prove your
+machine, CUDA and the data path work before the long run. Verified on these exact five events
+in the integration sandbox (2026-11-13). The output is labelled mock: it covers only part of a fold.
 
 ```powershell
 cd $P
-python scripts\run_prototype_pipeline.py --data-root $WSTS --work prototype_work\real_plumbing --events fire_25294989 fire_21997854 fire_25294983 fire_24461965 fire_24604426 --epochs 3 --device cuda
+python scripts\run_prototype_pipeline.py --data-root $WSTS --work prototype_work\real_smoke --fold 2021 --events fire_25294989 fire_25294983 fire_21997854 fire_24333267 fire_21615469 --epochs 3 --device cuda
 ```
 
-## 5. Real runs still owed (the "needs you" list)
+Pass: it ends with `Pipeline finished.` and step 6 prints `"mode": "mock"` with the reason
+`OOF coverage ... < 1.0`. If CUDA is not found, check `python -c "import torch; print(torch.cuda.is_available())"`.
 
-These need the full dataset and were never run. Each must be run as written; paste the printed
-summary back for the docs.
+## 5. Real data: train M1 and run Gate 2
+
+This is the work everything else waits for. M1 (`m1_spatial_unet`) is the shared U-Net on day D
+only; it is Gate 2's own evidence, so it trains with `training.enabled: false` (that flag gates
+M3/M4 only). Run from `$P`, one line at a time.
 
 ```powershell
 cd $P
 python scripts\build_phase3_data_release.py --data-root $WSTS
-python scripts\run_observability_diagnostic.py --data-root $WSTS
-python scripts\benchmark_temporal_memory.py --T 5 3
+python scripts\run_baselines.py --data-root $WSTS
+python scripts\train_temporal.py --model m1_spatial_unet --source wsts --data-root $WSTS --out outputs\m1 --preprocessing-version wsts_strict_input_v1 --device cuda
+python scripts\export_temporal_oof.py --run-dir outputs\m1 --run m1_spatial_unet_T1_seed0 --source wsts --data-root $WSTS --artifact-root artifacts --run-id m1_t1_v1 --device cuda
+python scripts\build_replay_catalogue.py --artifact-root artifacts --run-id m1_t1_v1
+python scripts\validate_oof_and_build_reveal.py --artifact-root artifacts --run-id m1_t1_v1 --data-root $WSTS
+python scripts\run_model_comparison.py --model m1_unet=artifacts\runs\m1_t1_v1\post_reveal\per_event_test_scores.csv
+python scripts\build_backend_registry.py --artifact-root artifacts --run-id m1_t1_v1 --data-root $WSTS --backend-artifact-root backend\artifacts --out artifacts\registry\m1_t1_v1
 ```
 
-Pass conditions: the release prints `"status": "COMPLETE"` and `"n_problems": 0`; the memory
-benchmark fits M4 at T=5 on 6 GB (if it reports out of memory, stop and record it). Never commit
-`data\evaluation_only\next_day_observability.csv` (it is git-ignored by path rules; check
-`git status` anyway). Earth Engine check 5 (GRIDMET day window) is
-`scripts\ee_checks_gfs_gridmet.js`, run in the Earth Engine code editor; its result goes into
-`docs\gfs_channel_audit.md` section 8.7 and `docs\leakage_audit.csv`.
+What each line does and what to look for:
 
-## 6. After Gate 2 is recorded (real results, publishable)
+| Line | Does | Pass condition |
+|---|---|---|
+| data release | Role 1 audit of every TIFF + input manifest | `"status": "COMPLETE"`, `"n_problems": 0` |
+| baselines | Role 4 baselines + the cache Gate 2 needs (`outputs\role4\`) | finishes; numbers equal `docs\baseline_results.md` |
+| train | M1, all four folds (15 epochs max, early stop after 3 without validation gain) | prints a progress line every 500 samples and one per epoch; checkpoints in `outputs\m1\fold_<Y>\` |
+| export | held-out forecast GeoTIFF for every test sample, fold model per fire | `"forecasts"` about 10,572 minus training-only samples |
+| catalogue | every raster checked against its source frame | `0 rejected` |
+| validate | Role 4's independent check + reveal package | `"coverage": 1.0`, `"metric_mismatches": 0` |
+| comparison | Gate 2 verdict, writes `reports\phase3\*` | prints the Gate 2 decision (BEATS / MATCHES / FAILS) |
+| registry | backend bundle | `"mode": "real"` |
+
+Time: the training reads each frame from disk; on an RTX 3060 expect very roughly 5 to 15 minutes
+per epoch per fold, so a few hours for all four folds. Watch the first epoch's `seconds` value
+and multiply. To run one fold at a time, add `--folds 2018` (then 2019, 2020, 2021) to the train
+line; export needs all four before the comparison.
+
+Then record the result: paste the comparison output into `docs\phase_gate_log.md` (Gate 2 row)
+for the lead. If Gate 2 = BEATS or MATCHES and the lead signs off, section 7 unlocks M3/M4.
+If it FAILS, that is a valid, reportable result (plan section on Gate 2): stop and diagnose, do
+not train a bigger model to hide it.
+
+## 6. See the real M1 replays in the site
+
+```powershell
+cd $P\backend
+$env:FIREGUARD_APP_ENV = "development"
+$env:FIREGUARD_ARTIFACT_ROOT = "$P\backend\artifacts"
+$env:DATABASE_URL = "sqlite:///$($P -replace '\\','/')/backend/fireguard_real.db"
+python -m alembic upgrade head
+python scripts\load_registry_bundle.py --bundle "$P\artifacts\registry\m1_t1_v1\registry_bundle.json" --publish
+python -m uvicorn fireguard.main:app --port 8000
+```
+
+Second window: `cd $P\frontend` then `npm run dev`, open http://localhost:5173. The Results tab
+reads `reports\phase3\` at build time, so after the comparison it shows the M1 column and the
+Gate 2 verdict (restart `npm run dev` if it was already running). `--publish` here is for your
+local database; publishing on a shared deployment needs the lead's approval.
+
+## 7. After Gate 2 is recorded: M3 / M4
 
 Only when `docs/phase_gate_log.md` records Gate 2 = BEATS or MATCHES and the lead has signed off.
 
 1. Set `training.enabled: true` in `configs/temporal_unet.yaml` (one-line PR, cite the gate row).
-2. Train and export (per `docs/handoff/role3_phase4_handoff.md`):
+2. Train, export and compare exactly as section 5, with `--model m3_stacked_unet` (run name
+   `m3_stacked_unet_T5_seed0`, run id e.g. `m3_t5_v1`) and then `--model m4_convlstm_unet`, adding
+   each to the comparison: `--model m1_unet=... --model m3_stacked_unet=... --model m4_convlstm_unet=...`.
+3. Which model the replay publishes is decided by Gate 3 in `docs/model_comparison_protocol.md`.
 
-```powershell
-python scripts\train_temporal.py --model m3_stacked_unet --T 5 --source wsts --data-root $WSTS --out outputs\temporal --preprocessing-version wsts_strict_input_v1
-python scripts\export_temporal_oof.py --run-dir outputs\temporal --run m3_stacked_unet_T5_seed0 --source wsts --data-root $WSTS --artifact-root artifacts --run-id m3_t5_v1 --device cuda
-python scripts\build_replay_catalogue.py --artifact-root artifacts --run-id m3_t5_v1
-python scripts\validate_oof_and_build_reveal.py --artifact-root artifacts --run-id m3_t5_v1 --data-root $WSTS
-python scripts\build_backend_registry.py --artifact-root artifacts --run-id m3_t5_v1 --data-root $WSTS --backend-artifact-root backend\artifacts --out artifacts\registry\m3_t5_v1
-```
+Other real runs still owed: `python scripts\run_observability_diagnostic.py --data-root $WSTS`,
+`python scripts\benchmark_temporal_memory.py --T 5 3` (M4 at T=5 must fit in 6 GB), and Earth
+Engine check 5 (`scripts\ee_checks_gfs_gridmet.js`). Never commit
+`data\evaluation_only\next_day_observability.csv`, `outputs\` or `artifacts\` (git-ignored; check
+`git status` anyway).
 
-   `build_backend_registry.py` prints `"mode": "real"` only when no mock condition holds.
-3. Register (validated, not yet visible), then publish after approval:
-
-```powershell
-cd $P\backend
-$env:FIREGUARD_ARTIFACT_ROOT = "$P\backend\artifacts"
-python scripts\load_registry_bundle.py --bundle "$P\artifacts\registry\m3_t5_v1\registry_bundle.json"
-python scripts\load_registry_bundle.py --bundle "$P\artifacts\registry\m3_t5_v1\registry_bundle.json" --publish
-```
-
-Which model gets exported (M3 or M4, T=5 or T=3) is decided by Gate 3 in
-`docs/model_comparison_protocol.md`, not by this runbook.
-
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
@@ -170,4 +202,7 @@ Which model gets exported (M3 or M4, T=5 or T=3) is decided by Gate 3 in
 | `ARTIFACT_CHECKSUM_MISMATCH` / not found in the UI | `FIREGUARD_ARTIFACT_ROOT` differs from the one used when loading | use the same folder for loading and serving |
 | `refusing --mode real: ...` | a mock condition holds (synthetic data, plumbing run, training disabled) | intended; see the listed reasons |
 | Map has no background | basemap tiles need internet | forecast layers still draw; or set `VITE_BASEMAP_STYLE` in `frontend\.env.local` |
-| `train_temporal.py: BLOCKED: training.enabled is false` | Gate 2 not recorded | intended |
+| `train_temporal.py: BLOCKED: training.enabled is false` | M3/M4 before Gate 2 | intended; train M1 (section 5) |
+| `fold <Y> <model>: events differ from the frozen test split` | comparison given a subset run | export all four folds of the full dataset |
+| `OOF coverage ... < 1.0` in the registry step | subset or interrupted export | re-run export for all folds |
+| Results tab still says "not run" after the comparison | the page reads the reports at build time | restart `npm run dev` / rebuild |
