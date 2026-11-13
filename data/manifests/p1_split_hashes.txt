@@ -1,7 +1,7 @@
 # FireGuard P1 split hashes. SHA-256 with CRLF normalised to LF (binary files as-is).
-# status=FROZEN grouping_input=footprints rule=30km/14d linkage=single validation_target=0.175 seed=0
-55a3ca18c0c981e8f1671b78e2d23b23a6e30fe84a929100dddcd5f9b39e90d5  p1_loyo_fold_manifest.csv
-97342b9639ff0713bfc837799c62db02bc4d29e190b6bee355bb900910cfa82d  fire_complex_groups.csv
+# status=FROZEN grouping_input=footprints rule=30km/14d linkage=single validation_target=0.175 seed=0 footprint_rule=v2_own_fire_no_persistent
+34e2909009ad3bb7f5aefb3ad9b5c02ec1df4c776eb2c5bf02eaf68f098e6976  p1_loyo_fold_manifest.csv
+60fb8e7898318b5c3ff64aad49c8c1a45adcb93b7858bcfc9d26d6e9ba361469  fire_complex_groups.csv
 cc0ae14aaf5db30bf5d8c8fd19a179ec4dd8dc93fc197db07e12d7d1da53b990  wsts_eval_samples.csv
 350e56aeb5f168a4277ae1b2f7f581bc5f13a7004b4413dbc01c9a50239859b8  wsts_event_footprints.csv
 2fbac56a949511c62c1acef9bd6ca5e29d1d96a0cd7f0517eeb40c444acb8a69  wsts_event_metadata.csv

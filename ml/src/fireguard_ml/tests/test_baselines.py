@@ -153,3 +153,24 @@ def test_persistence_f1_on_a_static_fire_is_perfect():
     fire = np.zeros((6, 6), bool)
     fire[2:4, 2:4] = True
     assert f1_iou(fire, persistence(fire))["f1"] == 1.0
+
+
+def test_smallest_dilation_adds_the_four_direct_neighbours():
+    # regression: 10 m key rounding once put the 375 m neighbour (key 38) outside r = 0.375 km
+    fire = np.zeros((5, 5), bool)
+    fire[2, 2] = True
+    c = DistanceCounts.from_frame(fire, np.zeros_like(fire))
+    covered = int((c.pos + c.neg)[dilated_scores(c, 0.375) == 1].sum())
+    assert covered == 5  # centre + 4 neighbours; diagonals (0.53 km) excluded
+    assert dilated_persistence(fire, 0.375).sum() == 5
+
+
+def test_climatology_adjacent_bin_receives_the_direct_neighbours():
+    fire = np.zeros((7, 7), bool)
+    fire[3, 3] = True
+    target = np.zeros_like(fire)
+    target[3, 4] = True  # a direct neighbour burns tomorrow
+    c = DistanceCounts.from_frame(fire, target)
+    clim = fit_climatology(c, fold=2020, split="train", prior_strength=0.0)
+    assert clim.probs[1] == pytest.approx(1 / 4)  # bin 1 = exactly one cell away
+    assert clim.predict_distance(np.array([0.375]))[0] == pytest.approx(1 / 4)

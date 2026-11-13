@@ -28,12 +28,41 @@ Groups are the connected components of the "related" graph (single linkage). Sen
 
 | Item | Definition | Reason |
 |---|---|---|
-| Footprint | Every 375 m cell whose active-fire band is > 0 on at least one day of the event | Role 1 reports `actual_fire_perimeter_status = UNKNOWN` and `fire_footprint_proxy_status = NOT_DERIVED` for all 607 events; frame bounding boxes are ~90 x 115 km image extents (4,113 bbox pairs overlap), so they cannot stand in for footprints. "> 0" matches the loader's target binarisation |
+| Footprint | Every 375 m cell whose active-fire band is > 0 on at least one day of the event, then cleaned by rule v2 (section 3a) | Role 1 reports `actual_fire_perimeter_status = UNKNOWN` and `fire_footprint_proxy_status = NOT_DERIVED` for all 607 events; frame bounding boxes are ~90 x 115 km image extents (4,113 bbox pairs overlap), so they cannot stand in for footprints. "> 0" matches the loader's target binarisation |
 | Cell id | `row * 100000 + col` with `row = floor(y / 375)`, `col = floor(x / 375)` of the cell centre in EPSG:32610 | Every WSTS grid edge is a multiple of 375 m in EPSG:32610, so ids agree across events and overlap is an exact set intersection |
 | Centroid | Mean of the footprint cell centres, converted to lon/lat with pyproj | Distances use the great-circle formula: many events lie far east of UTM zone 10, where projected metres are distorted |
 | Event date interval | First to last date with any detected fire; falls back to the image-sequence dates only if an event has no detection | The image sequence includes 4 buffer days either side (WSTS paper), which would make every event look 8 days longer |
 | Anchor year (P1) | Manifest year of the group's earliest-starting event | Plan v4 says "year of its earliest event start date". One 2018 event starts on 2017-12-29; using its calendar year would create a 2017 fold that does not exist, so the manifest year is used. Stated as a deviation |
 | Group id | `G<anchor_year>_<nnnn>`, numbered by earliest start date, then event id | Deterministic and readable |
+
+## 3a. Footprint cleaning (rule `v2_own_fire_no_persistent`, adopted 2026-11-13)
+
+The first frozen run used every detected cell in the frame as the footprint (rule v1). It
+over-grouped: one group held 64 events and the 2018 fold's test split held 399 events. Two
+causes, both measured on the full dataset:
+
+1. **Persistent thermal anomalies.** Some cells are "on fire" in events from many different years
+   (industrial heat sources, gas flares, volcanic vents). Two unrelated fires whose frames both
+   contain such a cell "overlap". 134 cells were seen in events from 3 or more distinct years.
+2. **Other fires in the frame.** A WSTS frame is about 90 x 115 km and often contains detections of
+   neighbouring, unrelated fires; v1 counted them as part of the event's footprint.
+
+Rule v2, applied before grouping (`fire_complex_groups.persistent_cells`, `own_fire_cells`):
+
+- remove cells detected in events from **3 or more distinct years**;
+- split the remaining cells into connected clusters after a 2-cell (750 m) dilation, and keep only
+  the clusters within **5 km** of the frame centre (WSTS centres each frame on its fire); if none
+  is that close, keep the nearest cluster. Dilation only joins clusters; it never adds cells.
+
+Checks: for 95.9 % of events the frame centre lies within 5 km of a kept cluster; the median event
+keeps 84.0 % of its raw cells; 54 cross-year pairs still overlap after cleaning, i.e. real re-burns
+of the same ground, which correctly stay grouped. Event date intervals still come from the raw
+detections (conservative: intervals can only be longer, which can only add links). The rule
+version is written into `p1_split_hashes.txt` (`footprint_rule=`), so the hash identifies it.
+
+Effect on the frozen split: 449 groups (364 singletons, largest 11 events); per-fold test events
+2018: 220, 2019: 88, 2020: 177, 2021: 122. **The P1 manifest hash changed** to `34e29090...`; any
+artifact tied to an earlier hash is invalid.
 
 ## 4. Oversized-group safeguard
 
@@ -44,15 +73,14 @@ group is related (events taken in start-date order; each joins the first group i
 full). The decision is printed and stored in the report. The threshold is a warning, not proof of
 error; the report also lists the largest group's members so a person can inspect it.
 
-## 5. Results so far
+## 5. Results (FROZEN, rule v2)
 
-**Provisional run (frame centres, no footprints)**, from `docs/fire_complex_groups_report.md`:
-506 groups (437 singletons), largest 6 events; largest yearly share 2.3-4.1 %, far below 20 %.
-Under 50 km / 30 days: 391 groups, largest 13, largest share 6.5 %. Single linkage is kept.
+From `docs/fire_complex_groups_report.md`: 449 groups (364 singletons), largest 11 events; largest
+yearly share 1.7-4.1 %, far below 20 %, so single linkage is kept. Related pairs: 129 by
+footprint overlap, 66 by distance/date. Sensitivity rule (50 km / 30 days, reported only): 359
+groups, largest 21, largest share 8.1 %.
 
-These numbers are **not frozen**: the overlap arm could not fire without footprints. A test on
-three real events showed why it matters: `fire_24461930` and `fire_24461965` share almost the same
-~5,000 burned cells. The frozen run must use real footprints (section 6).
+The provisional frame-centre run (506 groups) and the v1 footprint run are superseded.
 
 ## 6. How to freeze (about 15 minutes on a machine with the dataset)
 

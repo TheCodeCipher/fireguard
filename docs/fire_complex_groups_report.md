@@ -4,79 +4,68 @@
 
 **Status: FROZEN** (grouping input: `footprints`, unreadable TIFFs: 0, events: 607).
 
+**Footprint rule v2_own_fire_no_persistent:** 134 persistent thermal-anomaly cells (seen in events from 3+ different years) removed; each event keeps only its own fire clusters (within 5 km of the image centre); median share of raw cells kept 84.0%. See `docs/fire_complex_groups.md` section 3a.
+
 **Decision:** single linkage kept: no group exceeds 20 % of any year's events.
 
 ## Primary rule: 30 km / 14 days, single linkage
 
-260 groups (200 singletons); size median 1, p90 3, p95 6, max 64; related pairs {'overlap': 791, 'near': 6}; cross-year groups 31
+449 groups (364 singletons); size median 1, p90 2, p95 3, max 11; related pairs {'overlap': 129, 'near': 66}; cross-year groups 33
 
 | Group size (events) | Number of groups |
 |---:|---:|
-| 1 | 200 |
-| 2 | 26 |
-| 3 | 9 |
-| 4 | 7 |
-| 5 | 2 |
-| 6 | 4 |
-| 7 | 1 |
-| 8 | 1 |
+| 1 | 364 |
+| 2 | 53 |
+| 3 | 18 |
+| 4 | 4 |
+| 5 | 5 |
+| 6 | 1 |
+| 8 | 2 |
 | 9 | 1 |
-| 12 | 2 |
-| 19 | 1 |
-| 20 | 1 |
-| 21 | 2 |
-| 34 | 1 |
-| 39 | 1 |
-| 64 | 1 |
+| 11 | 1 |
 
 | Year | Raw events | Groups anchored | Largest group | Its events in year | Share | > 20 %? |
 |---:|---:|---:|---|---:|---:|---|
-| 2018 | 176 | 103 | G2018_0034 | 17 | 9.7% | no |
-| 2019 | 74 | 36 | G2018_0021 | 11 | 14.9% | no |
-| 2020 | 201 | 77 | G2018_0034 | 24 | 11.9% | no |
-| 2021 | 156 | 44 | G2018_0095 | 29 | 18.6% | no |
+| 2018 | 176 | 149 | G2018_0003 | 3 | 1.7% | no |
+| 2019 | 74 | 61 | G2019_0012 | 3 | 4.1% | no |
+| 2020 | 201 | 137 | G2019_0012 | 8 | 4.0% | no |
+| 2021 | 156 | 102 | G2018_0058 | 5 | 3.2% | no |
 
 ## Sensitivity rule: 50 km / 30 days, single linkage (reported, not used for splits)
 
-244 groups (183 singletons); size median 1, p90 3.7, p95 6.85, max 64; related pairs {'overlap': 791, 'near': 54}; cross-year groups 30
+359 groups (262 singletons); size median 1, p90 3, p95 5.1, max 21; related pairs {'overlap': 129, 'near': 209}; cross-year groups 29
 
 | Group size (events) | Number of groups |
 |---:|---:|
-| 1 | 183 |
-| 2 | 27 |
-| 3 | 9 |
+| 1 | 262 |
+| 2 | 51 |
+| 3 | 18 |
 | 4 | 7 |
-| 5 | 2 |
-| 6 | 3 |
-| 7 | 2 |
-| 9 | 2 |
-| 12 | 1 |
-| 19 | 1 |
-| 20 | 1 |
+| 5 | 3 |
+| 6 | 6 |
+| 7 | 4 |
+| 8 | 3 |
+| 9 | 3 |
+| 10 | 1 |
 | 21 | 1 |
-| 22 | 1 |
-| 23 | 1 |
-| 35 | 1 |
-| 39 | 1 |
-| 64 | 1 |
 
 | Year | Raw events | Groups anchored | Largest group | Its events in year | Share | > 20 %? |
 |---:|---:|---:|---|---:|---:|---|
-| 2018 | 176 | 97 | G2018_0034 | 17 | 9.7% | no |
-| 2019 | 74 | 34 | G2018_0021 | 12 | 16.2% | no |
-| 2020 | 201 | 69 | G2018_0034 | 24 | 11.9% | no |
-| 2021 | 156 | 44 | G2018_0089 | 29 | 18.6% | no |
+| 2018 | 176 | 121 | G2018_0030 | 9 | 5.1% | no |
+| 2019 | 74 | 53 | G2019_0005 | 6 | 8.1% | no |
+| 2020 | 201 | 111 | G2019_0005 | 15 | 7.5% | no |
+| 2021 | 156 | 74 | G2021_0014 | 6 | 3.8% | no |
 
-Largest group under the chosen rule: `G2018_0034` with 64 events: `fire_21804577`, `fire_21804582`, `fire_21889717`, `fire_21889697`, `fire_21889719`, `fire_21889672`, `fire_21889679`, `fire_21889682`, `fire_21889683`, `fire_21889734`, `fire_21889754`, `fire_21889763`, `fire_21997775`, `fire_21997770`, `fire_22141195`, `fire_22257961`, `fire_22257882`, `fire_22863125`, `fire_23036522`, `fire_23300668`, `fire_23410594`, `fire_24025601`, `fire_24103561`, `fire_24191384`, `fire_24191357`, `fire_24191347`, `fire_24332600`, `fire_24332732`, `fire_24332591`, `fire_24332700`, `fire_24332628`, `fire_24332760`, `fire_24332702`, `fire_24332746`, `fire_24332761`, `fire_24332764`, `fire_24332608`, `fire_24461320`, `fire_24462764`, `fire_24461347`, `fire_24461328`, `fire_24462610`, `fire_24462691`, `fire_24461421`, `fire_24461607`, `fire_25204848`, `fire_25204820`, `fire_25204812`, `fire_25204815`, `fire_25295089`, `fire_25295081`, `fire_25294687`, `fire_25294691`, `fire_25294692`, `fire_25294706`, `fire_25410445`, `fire_25410438`, `fire_25410444`, `fire_25411102`, `fire_25410483`, `fire_25411057`, `fire_25411093`, `fire_25547912`, `fire_25547988`.
+Largest group under the chosen rule: `G2019_0012` with 11 events: `fire_23036565`, `fire_23036575`, `fire_23036564`, `fire_24103581`, `fire_24191427`, `fire_24191423`, `fire_24332801`, `fire_24332803`, `fire_24332798`, `fire_24332800`, `fire_24332815`.
 
 ## P1 leave-one-year-out folds (chosen rule)
 
 | Test year | Train groups / events | Validation groups / events | Test groups / events | Validation share of non-test groups |
 |---:|---:|---:|---:|---:|
-| 2018 | 130 / 171 | 27 / 37 | 103 / 399 | 17.2% |
-| 2019 | 185 / 456 | 39 / 97 | 36 / 54 | 17.4% |
-| 2020 | 151 / 461 | 32 / 44 | 77 / 102 | 17.5% |
-| 2021 | 179 / 490 | 37 / 65 | 44 / 52 | 17.1% |
+| 2018 | 247 / 317 | 53 / 70 | 149 / 220 | 17.7% |
+| 2019 | 320 / 429 | 68 / 90 | 61 / 88 | 17.5% |
+| 2020 | 257 / 344 | 55 / 86 | 137 / 177 | 17.6% |
+| 2021 | 286 / 399 | 61 / 86 | 102 / 122 | 17.6% |
 
 Every fold passed `validate_manifest`: no group spans two splits, test = exactly the groups anchored to the test year, validation groups come only from the other anchor years, and every event is tested in exactly one fold.
 
@@ -86,7 +75,7 @@ Every fold passed `validate_manifest`: no group spans two splits, test = exactly
 
 | Test year | Train groups / events | Validation groups / events | Test groups / events | Validation share of non-test groups |
 |---:|---:|---:|---:|---:|
-| 2018 | 121 / 170 | 26 / 32 | 97 / 405 | 17.7% |
-| 2019 | 173 / 506 | 37 / 49 | 34 / 52 | 17.6% |
-| 2020 | 144 / 445 | 31 / 64 | 69 / 98 | 17.7% |
-| 2021 | 165 / 485 | 35 / 70 | 44 / 52 | 17.5% |
+| 2018 | 197 / 294 | 41 / 83 | 121 / 230 | 17.2% |
+| 2019 | 253 / 437 | 53 / 74 | 53 / 96 | 17.3% |
+| 2020 | 205 / 371 | 43 / 62 | 111 / 174 | 17.3% |
+| 2021 | 236 / 398 | 49 / 102 | 74 / 107 | 17.2% |

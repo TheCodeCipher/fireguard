@@ -1,7 +1,7 @@
 # FireGuard Role Hand-off Report
 
 - Assigned role: Role 4, Research / Evaluation / Leakage Audit Engineer
-- Phase completed: Phase 1 (READY FOR REVIEW; one run left before the manifests can be frozen, see section 6)
+- Phase completed: Phase 1 (P1 manifests FROZEN 2026-11-13 under footprint rule v2; see section 2a and `docs/fire_complex_groups.md` section 3a)
 - Branch: `role-4/ml/evaluation-protocol` (suggested, per CONTRIBUTING.md)
 - Date: 2026-11-13
 
@@ -14,7 +14,7 @@
 | P1-R4-05 | Related-fire grouping rule, diagnostics, 20 % check, 50 km / 30 d sensitivity | Rule, code and tests done; run on real metadata (provisional) | `docs/fire_complex_groups.md`, `docs/fire_complex_groups_report.md`, `fire_complex_groups.py`, `derive_event_footprints.py` |
 | P1-R4-06 | P1 defined separately from P2 | Done; P2 explicitly deferred | `docs/validation_protocols.md` sections 14-15 |
 | P1-R4-07 | Whole-group validation from training years only, 15-20 % | Done (17.5-17.7 % in every fold) | `event_splits.py`, section 14 |
-| P1-R4-08 | Freeze and hash manifests | **Built and hashed as PROVISIONAL**; freezing needs the footprint run (section 6) | `data/manifests/p1_loyo_fold_manifest.csv`, `p1_split_hashes.txt` |
+| P1-R4-08 | Freeze and hash manifests | **Done: FROZEN**, footprint rule v2, manifest sha256 `34e2909009ad3bb7...` (the first frozen hash is withdrawn, see 2a) | `data/manifests/p1_loyo_fold_manifest.csv`, `p1_split_hashes.txt` |
 | P1-R4-09 | Metric definitions and code | Done, implemented in full, not stubs | `docs/metrics_contract.md`, `evaluation/metrics.py`, `bootstrap.py`, `calibration.py` |
 | P1-R4-10/11 | Soft baselines specified; downwind baseline status | Done; downwind disabled | `docs/evaluation_protocol.md`, `baselines/downwind.py` |
 | P1-R4-12 | Observability evaluation-only, with a guard test | Done | `data/observability.py`, `test_observability_not_input.py` |
@@ -27,7 +27,7 @@
 | Grouping report has method, thresholds, size distribution, largest-group share by year | `python scripts/build_groups_and_p1_splits.py` | PASS on provisional input | `docs/fire_complex_groups_report.md` |
 | > 20 % warning evaluated; fallback documented | same | PASS: max share 4.1 % (6.5 % under 50 km / 30 d), single linkage kept; complete-linkage fallback implemented and tested | report; `test_fire_complex_groups.py` |
 | P1 splits group-safe; validation only from training years | `pytest -k event_splits` | PASS | `test_event_splits.py` |
-| P1 manifests frozen and hashed; no group across splits | same + hash check | **BLOCKED**: hashed and valid, but `status=PROVISIONAL` until real footprints are used | `p1_split_hashes.txt` |
+| P1 manifests frozen and hashed; no group across splits | same + hash check | **PASS**: `status=FROZEN`, 0 unreadable TIFFs, validated | `p1_split_hashes.txt` |
 | P2 documented separately or deferred | n/a | PASS (deferred) | `validation_protocols.md` section 15 |
 | VNP09GA next-day observability not an input; test prevents it | `pytest -k observability` | PASS | `test_observability_not_input.py` |
 | Metric definitions, full-frame natural prevalence, event-level paired bootstrap documented | n/a | PASS | `docs/metrics_contract.md` |
@@ -42,6 +42,7 @@
 | Anchor year = calendar year of earliest start date | Manifest year of the earliest-starting event | Avoids a non-existent 2017 fold for `fire_21458836` (starts 2017-12-29, manifest year 2018) |
 | Metric "stubs" (`validation_protocols.md` 13.5) | Full implementations, cross-checked against scikit-learn and a pixel-level recomputation on real data | Phase 2 needs them anyway |
 | Hash file bytes | Hash with CRLF normalised to LF | `.gitattributes` does not pin CSVs to LF; a Windows checkout would otherwise break the hash |
+| Footprint = every detected cell in the frame (as first frozen) | **Re-frozen** with rule v2: drop cells seen in events from 3+ years, keep only the event's own fire clusters (within 5 km of the frame centre) | The first freeze over-grouped (one 64-event group; 2018 test split 399 events) because of persistent thermal anomalies and unrelated fires in the same frame. Evidence: 134 persistent cells; 95.9 % of events have a kept cluster within 5 km of the centre; 54 genuine cross-year re-burn pairs still group. The manifest hash changed; anyone holding the old hash must switch |
 
 ## 3. Dataset and source decisions
 - Verified: 607 events / 13,607 TIFFs; consecutive dates in every event; all readable TIFFs EPSG:32610, 375 m, 23 float32 bands, no nodata tag; strict channel list of 7 (`viirs_m11`, `viirs_i2`, `viirs_i1`, `slope`, `aspect`, `elevation`, `binary_active_fire_mask`).
@@ -59,7 +60,7 @@
 ## 5. Open issues and blockers
 | Issue | Impact | Owner | Due date |
 |---|---|---|---|
-| Run footprints + rebuild manifests on a machine with the dataset (two commands, ~15 min) | Blocks G1-D (frozen P1 manifests) | Role 4 | 2026-11-15 |
+| Tell Role 1 (and everyone holding the first hash) that the P1 hash is now `34e2909009ad3bb7...` | Artifacts tied to the old hash are invalid | Role 4 | now |
 | Strict list has no weather, vegetation or land cover | Team must accept a thin M1-M4 or resolve the blockers below | Team at Gate 1 | 2026-11-15 |
 | GRIDMET Level A (Earth Engine check 5) | Would add 7 weather channels to strict | Role 3 | ASAP |
 | Re-export NDVI/EVI2 with composite end <= D, land cover from year Y-1 | Would restore vegetation and land cover (M2 / H1) | Role 1 | Phase 2 |
@@ -68,5 +69,5 @@
 | HHMM encoding (sin/cos + mask) | `active_fire_time` stays excluded until done | Role 1 / Role 2 | Phase 2 |
 
 ## 6. Phase sign-off
-- Role-specific acceptance: **BLOCKED** on one item: P1 manifests are valid and hashed but `PROVISIONAL`. Unblock: `python scripts/derive_event_footprints.py --data-root <WSTS folder>` then `python scripts/build_groups_and_p1_splits.py`; the header of `p1_split_hashes.txt` must then read `status=FROZEN`. Everything else PASS, subject to Roles 1-3 review of the register.
-- Global gate impact: **BLOCKING for G1-D** until the freeze run; G1-B (leakage register) ready for review; G1-C reviewed (Role 3's GFS classification is reflected in the register).
+- Role-specific acceptance: **PASS**: P1 manifests FROZEN (rule v2), validated and hashed; subject to Roles 1-3 review of the register.
+- Global gate impact: G1-D satisfied by the v2 freeze; G1-B (leakage register) ready for review; G1-C reviewed (Role 3's GFS classification is reflected in the register).

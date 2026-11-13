@@ -33,6 +33,18 @@ FIT_SPLIT = "train"
 SELECT_SPLIT = "validation"
 
 
+def distance_keys(distance_km) -> np.ndarray:
+    """Distances as integer keys (10 m units; ``NO_FIRE_KEY`` where there is no fire).
+
+    Every threshold and bin edge is compared in this same key space. Comparing rounded keys with
+    unrounded km values would put the 375 m neighbour (key 38 = 0.38 km) outside a 0.375 km radius.
+    """
+    d = np.asarray(distance_km, dtype=np.float64)
+    return np.where(
+        np.isinf(d), NO_FIRE_KEY, np.rint(np.where(np.isinf(d), 0, d) * KEY_PER_KM)
+    ).astype(np.int64)
+
+
 class SplitError(RuntimeError):
     """Raised when a baseline parameter would be fitted on the wrong split."""
 
@@ -55,8 +67,7 @@ class DistanceCounts:
         fire = np.asarray(fire_today, dtype=bool)
         y = np.asarray(target_tomorrow, dtype=bool)
         m = np.ones(y.shape, dtype=bool) if valid_mask is None else np.asarray(valid_mask, bool)
-        d = distance_to_fire_km(fire)
-        keys = np.where(np.isinf(d), NO_FIRE_KEY, np.rint(d * KEY_PER_KM)).astype(np.int64)
+        keys = distance_keys(distance_to_fire_km(fire))
         k, y = keys[m], y[m]
         uniq, inv = np.unique(k, return_inverse=True)
         pos = np.bincount(inv, weights=y, minlength=uniq.size).astype(np.int64)
@@ -117,7 +128,8 @@ def persistence_scores(counts: DistanceCounts) -> np.ndarray:
 
 
 def dilated_scores(counts: DistanceCounts, radius_km: float) -> np.ndarray:
-    return (counts.distance_km() <= radius_km + 1e-9).astype(np.float64)
+    limit = int(distance_keys(radius_km))
+    return ((counts.keys != NO_FIRE_KEY) & (counts.keys <= limit)).astype(np.float64)
 
 
 def best_amplitude(counts: DistanceCounts, scale_km: float) -> float:
@@ -153,10 +165,16 @@ class DistanceBinClimatology:
     fold: int
     train_prevalence: float
 
+    def bin_of_keys(self, keys: np.ndarray) -> np.ndarray:
+        """Bin index per distance key: bin 0 = on fire, bin i = (edge[i-1], edge[i]], last two =
+        beyond the final edge and no fire in frame."""
+        k = np.asarray(keys, dtype=np.int64)
+        edge_keys = distance_keys(np.asarray(self.edges_km))
+        b = np.searchsorted(edge_keys, k, side="left")
+        return np.where(k == NO_FIRE_KEY, len(self.edges_km) + 1, b)
+
     def bin_of(self, distance_km: np.ndarray) -> np.ndarray:
-        d = np.asarray(distance_km, dtype=np.float64)
-        b = np.searchsorted(np.asarray(self.edges_km), d - 1e-9, side="left")
-        return np.where(np.isinf(d), len(self.edges_km) + 1, b)
+        return self.bin_of_keys(distance_keys(distance_km))
 
     def predict_distance(self, distance_km) -> np.ndarray:
         return np.asarray(self.probs)[self.bin_of(distance_km)]
@@ -165,7 +183,7 @@ class DistanceBinClimatology:
         return self.predict_distance(distance_to_fire_km(fire_today))
 
     def scores(self, counts: DistanceCounts) -> np.ndarray:
-        return self.predict_distance(counts.distance_km())
+        return np.asarray(self.probs)[self.bin_of_keys(counts.keys)]
 
 
 def fit_climatology(
@@ -184,9 +202,11 @@ def fit_climatology(
     p0 = train.pos.sum() / n_total
     edges = tuple(float(e) for e in edges_km)
     dummy = DistanceBinClimatology(edges, (0.0,) * (len(edges) + 2), fold, p0)
-    bins = dummy.bin_of(train.distance_km())
+    bins = dummy.bin_of_keys(train.keys)
     n_bins = len(edges) + 2
     pos = np.bincount(bins, weights=train.pos, minlength=n_bins)
     tot = np.bincount(bins, weights=train.pos + train.neg, minlength=n_bins)
-    probs = (pos + prior_strength * p0) / (tot + prior_strength)
+    denom = tot + prior_strength
+    with np.errstate(invalid="ignore", divide="ignore"):
+        probs = np.where(denom > 0, (pos + prior_strength * p0) / denom, p0)  # empty bin -> p0
     return DistanceBinClimatology(edges, tuple(float(p) for p in probs), fold, float(p0))

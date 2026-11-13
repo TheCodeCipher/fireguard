@@ -1,0 +1,5 @@
+comparison,fold,candidate,reference,metric,mean_diff,ci_low,ci_high,n_events,n_groups,excluded_events,share_above_zero,verdict
+baseline sanity,2018,distance_decay,climatology,auprc,0.00587437727492709,0.00508002721099367,0.006617855213063599,216,146,4,1.0,BETTER
+baseline sanity,2019,distance_decay,climatology,auprc,0.004567835032440327,0.003420497802305563,0.0057051318905109736,88,61,0,1.0,BETTER
+baseline sanity,2020,distance_decay,climatology,auprc,0.005259792074346764,0.004561102578527392,0.005956082436385618,173,134,4,1.0,BETTER
+baseline sanity,2021,distance_decay,climatology,auprc,0.006448594729536239,0.005602670754836856,0.007284841049776993,122,102,0,1.0,BETTER
