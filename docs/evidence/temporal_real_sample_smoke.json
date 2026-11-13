@@ -1,0 +1,63 @@
+{
+  "event": "fire_21458798",
+  "year": "2018",
+  "input_dates_oldest_to_newest": [
+    "2018-01-02",
+    "2018-01-03",
+    "2018-01-04",
+    "2018-01-05",
+    "2018-01-06"
+  ],
+  "target_date": "2018-01-07",
+  "raw_hw": [
+    304,
+    247
+  ],
+  "padded_hw": [
+    320,
+    256
+  ],
+  "input_tensor": [
+    1,
+    5,
+    18,
+    320,
+    256
+  ],
+  "channels_per_frame": 18,
+  "target_positive_pixels": 10,
+  "target_positive_fraction": 0.000133177072235244,
+  "window_selection": "window chosen because its target day contains fire",
+  "models": {
+    "m3_stacked_unet": {
+      "logits": [
+        1,
+        1,
+        320,
+        256
+      ],
+      "probs_after_unpad": [
+        1,
+        1,
+        304,
+        247
+      ],
+      "parameters": 530001
+    },
+    "m4_convlstm_unet": {
+      "logits": [
+        1,
+        1,
+        320,
+        256
+      ],
+      "probs_after_unpad": [
+        1,
+        1,
+        304,
+        247
+      ],
+      "parameters": 819985
+    }
+  }
+}

@@ -1,7 +1,4 @@
-
-# ==========================
-# PYTHON
-# ==========================
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -13,44 +10,33 @@ build/
 venv/
 env/
 
-# ==========================
-# SECRETS
-# ==========================
+# Environment secrets
 .env
 .env.*
 !.env.example
 
-# ==========================
-# PYTHON TESTING
-# ==========================
+# Python testing and tooling
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .coverage
 htmlcov/
 
-# ==========================
 # IDE
-# ==========================
 .vscode/
 .idea/
 
-# ==========================
-# JAVASCRIPT
-# ==========================
+# JavaScript
 node_modules/
 frontend/dist/
 frontend/.vite/
 
-# ==========================
-# DATASETS
-# ==========================
+# Datasets
 data/raw/
 data/interim/
 data/processed/
 data/external/
 datasets/
-
 *.h5
 *.hdf5
 *.tif
@@ -59,43 +45,26 @@ datasets/
 *.grib
 *.grb
 
-# ==========================
-# MODEL ARTIFACTS
-# ==========================
+# Model artifacts and generated replay files
 artifacts/
 outputs/
 checkpoints/
 runs/
 mlruns/
-
 *.pt
 *.pth
 *.ckpt
 *.onnx
 
-# ==========================
-# LOGS
-# ==========================
+# Logs
 *.log
 logs/
 
-# ==========================
-# OPERATING SYSTEM
-# ==========================
-.DS_Store
-Thumbs.db
-# Environment secrets
-.env
-.env.*
-!.env.example
-
-# Local databases
+# Local development databases
 *.db
 *.sqlite
 *.sqlite3
 
-# Python test and tooling artifacts
-.pytest_cache/
-.ruff_cache/
-.coverage
-htmlcov/
+# Operating system
+.DS_Store
+Thumbs.db

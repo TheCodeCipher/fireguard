@@ -1,0 +1,41 @@
+# Temporal models M3 (stacked-days U-Net) and M4 (shared encoder + ConvLSTM) -- Role 3.
+#
+# STRICT configuration. The five GFS forecast channels are excluded and must never be listed here.
+# The GFS/FiLM benchmark-assumption branch gets its own file (gfs_benchmark_assumption.yaml) and only
+# after the conditions in docs/gfs_branch_gating.md are met. ml/src/fireguard_ml/tests/test_temporal_models.py enforces this.
+
+schema_version: 1
+strict: true
+
+data:
+  # Working candidate from plan v4 section 4.1. NOT yet confirmed by Role 1 / the lead.
+  n_leading_observations: 5
+  frame_order: oldest_to_newest
+  # Path to Role 4's frozen strict channel list. Not frozen yet -> null. c_strict is len(that list);
+  # never hard-code it (35 is only the upper bound before Role 4's leakage audit).
+  strict_channel_manifest: null
+  # Loader (processed) indices that are always dropped: the five GFS channels.
+  excluded_processed_indices: [33, 34, 35, 36, 37]
+  pad_multiple: 32            # must equal 2 ** depth; padding utility is owned by Role 2
+  geometric_augmentation: false
+  # Role 4's frozen P1 manifest and its hash. Fill both in once Gate 1 freezes them.
+  split_manifest: null
+  split_manifest_hash: null
+
+models:
+  m3:
+    model_type: m3_stacked_unet
+    base: 32
+    depth: 5
+  m4:
+    model_type: m4_convlstm_unet
+    base: 32
+    depth: 5
+    lstm_kernel: 3
+
+training:
+  # Phase 2 delivers tested interfaces only. Training M3/M4 is Phase 3 and needs Gate 2 first.
+  enabled: false
+  loss: bce_dice_masked                         # Role 2's implementation; valid-pixel mask applied
+  checkpoint_selection: val_auprc_full_frame    # natural prevalence, un-cropped frames
+  seed: 0
