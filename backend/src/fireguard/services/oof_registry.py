@@ -77,7 +77,16 @@ def validate_real_oof_context(run: ForecastRun, manifest: dict[str, Any]) -> Non
         "horizon_hours": run.horizon_hours,
     }
     for key, actual in expected.items():
-        supplied = _require_text(manifest, key)
+        # INTEGRATION FIX (Prototype): horizon_hours is an integer in the manifest contract and
+        # register_oof_artifacts.resolve_real_run rejects anything else, but _require_text only
+        # accepts strings, so every real manifest failed here ("horizon_hours must be a non-empty
+        # string") and nothing could ever be published. Integers are now compared as text;
+        # every other field is still required to be a non-empty string.
+        raw = manifest.get(key)
+        if isinstance(raw, int) and not isinstance(raw, bool):
+            supplied = str(raw)
+        else:
+            supplied = _require_text(manifest, key)
         if supplied != str(actual):
             raise RegistryValidationError(
                 f"{key} mismatch: expected {actual!s}, received {supplied!s}"
