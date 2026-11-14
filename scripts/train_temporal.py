@@ -44,6 +44,8 @@ def main() -> None:
     ap.add_argument("--device", default=None)
     ap.add_argument("--max-epochs", type=int, default=None, help="override (dry runs only)")
     ap.add_argument("--samples-per-epoch", type=int, default=None, help="cap (dry runs only)")
+    ap.add_argument("--resume", action="store_true",
+                    help="skip folds that already have a finished checkpoint for this exact config")
     a = ap.parse_args()
 
     cfg_y = yaml.safe_load(a.config.read_text())
@@ -95,6 +97,15 @@ def main() -> None:
     if source.is_mock:
         print("*** MOCK DATA: synthetic pipeline dry run. Results are not P1 results. ***")
     for fold in a.folds:
+        done = a.out / f"fold_{fold}" / f"{cfg.run_name()}.summary.json"
+        if a.resume and done.exists():
+            prev = json.loads(done.read_text())
+            ckpt = done.parent / prev["checkpoint"]
+            if prev.get("config_hash") == cfg.config_hash() and ckpt.exists():
+                print(f"[resume] fold {fold}: finished checkpoint found "
+                      f"(best_epoch {prev['best_epoch']}, val_auprc {prev['val_auprc']:.4f}); skipping")
+                continue
+            print(f"[resume] fold {fold}: summary exists but config or checkpoint differs; retraining")
         s = train_fold(cfg, source, proto, fold, a.out, a.device)
         print(
             json.dumps(
@@ -107,8 +118,9 @@ def main() -> None:
                         "best_epoch",
                         "val_auprc",
                         "seconds",
-                        "peak_how many gpu_memory_bytes",
+                        "peak_gpu_memory_bytes",
                     )
+                    if k in s
                 }
             )
         )
