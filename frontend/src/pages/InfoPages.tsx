@@ -250,7 +250,7 @@ export function Methodology() {
           WildfireSpreadTS v1.0 (Gerard et al., 2023), Zenodo record 8006177; loader pinned at commit <code>f62dc49</code>.
         </li>
         <li>NASA FIRMS VIIRS active-fire detections (Suomi-NPP, NOAA-20, NOAA-21) for the Live monitor.</li>
-        <li>Basemap: CARTO Positron with Esri World Hillshade; map data © OpenStreetMap contributors.</li>
+        <li>Basemap: Esri World Light Gray Canvas with Esri World Hillshade; map data © Esri, HERE, Garmin, OpenStreetMap contributors.</li>
         <li>HLS S30 was audited for historical coverage only; it is not a model input.</li>
       </ul>
     </div>

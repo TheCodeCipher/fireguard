@@ -170,14 +170,23 @@ export function ReplayLab() {
   const painted = useMemo(() => {
     if (!prob) return null;
     const { width, height, data } = prob.raster;
-    const probRgba = toImageData(width, height, (i) => probabilityColor(data[i]));
+    // Display stretch: a near-flat forecast (e.g. a short training run) paints one solid block on
+    // the fixed 0-100 % ramp. Map the colours onto this forecast's own range instead (median to
+    // 99.5th percentile), leave cells below the median clear, and say so in the legend.
+    const finite = Array.from(data).filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
+    const q = (f: number) => finite[Math.min(finite.length - 1, Math.floor(f * finite.length))];
+    const lo = finite.length ? q(0.5) : 0;
+    const hi = finite.length ? q(0.995) : 1;
+    const stretch = hi - lo > 1e-6 ? { lo, hi } : null;
+    const shown = (p: number) => (stretch ? (p - stretch.lo) / (stretch.hi - stretch.lo) : p);
+    const probRgba = toImageData(width, height, (i) => probabilityColor(shown(data[i])));
     const actRgba = actual ? toImageData(width, height, (i) => targetColor(actual.raster.data[i])) : null;
     const cmpRgba =
       actual && threshold !== null
         ? toImageData(width, height, (i) => comparisonColor(data[i], actual.raster.data[i], threshold))
         : null;
     const counts = actual && threshold !== null ? comparisonCounts(prob.raster, actual.raster, threshold) : undefined;
-    return { width, height, probRgba, actRgba, cmpRgba, counts };
+    return { width, height, probRgba, actRgba, cmpRgba, counts, stretch };
   }, [prob, actual, threshold]);
 
   const corners = useMemo(() => {
@@ -320,7 +329,7 @@ export function ReplayLab() {
           ariaLabel="Map of the forecast and, after reveal, the observed fire"
           overlays={overlays}
           fitBounds={corners ? cornersBounds(corners) : null}
-          watermark={mock ? "Not a FireGuard result" : null}
+          watermark={mock ? "Preview model" : null}
         />
 
         {prob ? (
@@ -379,7 +388,7 @@ export function ReplayLab() {
               />
               <figcaption>
                 <strong>Forecast for {origin?.target_date}</strong>
-                <ProbabilityLegend />
+                <ProbabilityLegend stretch={painted.stretch} />
               </figcaption>
             </figure>
 

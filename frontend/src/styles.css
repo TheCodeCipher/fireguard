@@ -274,15 +274,16 @@ label > input[type="date"] {
   max-width: 60ch;
 }
 
-/* "Not a result" flag: gold edge + pale gold wash, used for mock replays and fixtures only. */
+/* "Not a result" note for mock replays and fixtures: one quiet line with a thin gold edge, so it
+   reads as a caption rather than an alarm, but is always there. */
 .mock-banner {
-  background: var(--gold-wash);
-  border: 1px solid #e9c83a;
-  border-left: 5px solid var(--gold);
-  color: var(--ink);
-  padding: 0.65rem 0.95rem;
-  border-radius: var(--r-s);
-  font-size: 0.9rem;
+  background: transparent;
+  border: 0;
+  border-left: 3px solid var(--gold);
+  color: var(--muted);
+  padding: 0.15rem 0 0.15rem 0.7rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
 .mock-banner strong {
   margin-right: 0.3rem;
@@ -792,9 +793,9 @@ table.data td.best {
   position: absolute;
   top: 0.75rem;
   left: 0.75rem;
-  background: var(--gold-wash);
-  border: 1px solid #e9c83a;
-  border-left: 4px solid var(--gold);
+  background: rgba(255, 255, 255, 0.88);
+  border: 0;
+  border-left: 3px solid var(--gold);
   padding: 0.2rem 0.6rem;
   border-radius: var(--r-s);
   font-size: 0.78rem;

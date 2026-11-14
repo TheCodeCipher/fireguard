@@ -81,6 +81,9 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+P1_FOLDS = (2018, 2019, 2020, 2021)
+
+
 def mock_reasons(
     data_root: Path, run_dir: Path, model_version: dict, records: list[dict]
 ) -> list:
@@ -102,6 +105,11 @@ def mock_reasons(
         reasons.append(
             "configs/temporal_unet.yaml training.enabled is false (Gate 2 not recorded)"
         )
+    # INTEGRATION (Prototype, 2026-11-14): coverage 1.0 is measured within the exported folds, so a
+    # one-fold export would otherwise register as real. A result needs all four P1 test years.
+    exported = sorted(str(f) for f in model_version.get("folds", {}))
+    if exported != sorted(str(y) for y in P1_FOLDS):
+        reasons.append(f"only folds {exported} exported; a result needs all of {list(P1_FOLDS)}")
     if model_version.get("is_mock") or any(r.get("is_mock") for r in records):
         reasons.append("model_version.json or an OOF record has is_mock: true")
     # INTEGRATION (Prototype): a run on a handful of staged events is a smoke test, not a result.

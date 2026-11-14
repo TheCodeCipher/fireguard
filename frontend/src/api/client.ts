@@ -152,6 +152,11 @@ export const api = {
     if (q.minFrp !== undefined) p.set("min_frp", String(q.minFrp));
     return request<FiresResponse>(`/api/v1/fires?${p.toString()}`);
   },
+  /** Date range FIRMS currently serves for a source (its NRT feed can lag behind today). */
+  firmsAvailability: (source: string) =>
+    request<{ source: string; min_date: string; max_date: string }>(
+      `/api/v1/firms/availability?source=${encodeURIComponent(source)}`,
+    ),
   /** Latest published live next-day forecast (404 LIVE_FORECAST_NOT_AVAILABLE if none). */
   liveForecast: () => request<LiveForecast>(`/api/v1/live/forecasts`),
 

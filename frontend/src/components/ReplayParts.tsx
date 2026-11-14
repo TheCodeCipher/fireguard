@@ -39,31 +39,36 @@ export function RasterCanvas({
 /**
  * Banner shown on every mock replay. PROTOTYPE: worded for all three mock causes the bridge
  * (scripts/build_backend_registry.py) can record - synthetic pixels, a plumbing/smoke training
- * budget, or a run covering only part of a fold - since a real-data smoke run is now possible.
+ * budget, or a run covering only part of a fold or only some of the four test years.
  */
 export function MockBanner() {
   return (
     <div className="mock-banner" role="note">
-      <strong>Not a FireGuard result.</strong> This replay comes from a test run (synthetic data, a
-      smoke-test training budget, or only part of a fold). It shows the pipeline working end to
-      end; its forecast and numbers are not results.
+      <strong>Preview model.</strong> A test run, not the final model: it shows the pipeline
+      working end to end, and its forecast and scores are not final results.
     </div>
   );
 }
 
-export function ProbabilityLegend() {
+export function ProbabilityLegend({ stretch }: { stretch?: { lo: number; hi: number } | null }) {
+  const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+  const ticks = stretch
+    ? [0, 0.25, 0.5, 0.75, 1].map((t) => pct(stretch.lo + t * (stretch.hi - stretch.lo)))
+    : ["1%", "25%", "50%", "75%", "100%"];
   return (
     <div className="legend" aria-label="Probability legend">
       <span className="legend-title">Forecast probability of a detection tomorrow</span>
       <div className="legend-ramp" />
       <div className="legend-scale">
-        <span>1%</span>
-        <span>25%</span>
-        <span>50%</span>
-        <span>75%</span>
-        <span>100%</span>
+        {ticks.map((t, i) => (
+          <span key={i}>{t}</span>
+        ))}
       </div>
-      <span className="legend-note">Below 1% is left clear. Uncalibrated model output.</span>
+      <span className="legend-note">
+        {stretch
+          ? `Colours stretched to this forecast's own range (${pct(stretch.lo)} to ${pct(stretch.hi)}); cells below the median are left clear. Uncalibrated model output.`
+          : "Below 1% is left clear. Uncalibrated model output."}
+      </span>
     </div>
   );
 }

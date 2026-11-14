@@ -34,6 +34,8 @@ def main() -> None:
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--config", type=Path, default=ROOT / "configs" / "temporal_unet.yaml")
     ap.add_argument("--device", default="cpu")
+    ap.add_argument("--events", nargs="+", default=None,
+                    help="PROTOTYPE preview: export only these test events (run stays mock)")
     a = ap.parse_args()
 
     data = yaml.safe_load(a.config.read_text())["data"]
@@ -56,7 +58,8 @@ def main() -> None:
         raise SystemExit("synthetic exports must have 'mock' in --run-id so nobody mistakes them")
     folds = {f: a.run_dir / f"fold_{f}" / f"{a.run}.pt" for f in a.folds}
     print(
-        json.dumps(export_oof(a.run_dir, folds, source, proto, a.artifact_root, a.run_id, a.device))
+        json.dumps(export_oof(a.run_dir, folds, source, proto, a.artifact_root, a.run_id, a.device,
+                              set(a.events) if a.events else None))
     )
 
 

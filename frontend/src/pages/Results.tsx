@@ -5,36 +5,23 @@
  * build time by lib/results.ts: the gate verdicts, and per fold the pooled test AUPRC of every
  * model that has been evaluated. Baselines are evaluated today; M1 and the temporal models appear
  * when scripts/run_model_comparison.py has been run with them. Nothing is estimated or filled in:
- * a model that has not run is shown as "not run".
+ * a model without numbers is simply not drawn. The M1 fold-2018 preview comes from
+ * docs/evidence/role3/m1_fold2018_preview.json (scripts/build_m1_preview_results.py).
  */
-import {
-  contextAblation,
-  decisionText,
-  FOLDS,
-  foldFacts,
-  gate2,
-  gate3,
-  MODEL_LABEL,
-  modelsWithResults,
-  result,
-  strongestBaseline,
-} from "../lib/results";
+import preview from "../../../docs/evidence/role3/m1_fold2018_preview.json";
+import { FOLDS, foldFacts, MODEL_LABEL, modelsWithResults, result, strongestBaseline } from "../lib/results";
 
 const fmt = (v: number | null | undefined, d = 3) => (v === null || v === undefined ? null : v.toFixed(d));
 const pct = (v: number) => `${(v * 100).toFixed(2)}%`;
 
-function pillClass(code: string) {
-  if (code === "NOT_RUN" || code === "INCOMPLETE") return "open";
-  if (code === "FAILS" || code === "REMOVE") return "fail";
-  return "done";
-}
-
-/** Models always listed in the table: the two soft baselines plus M1 (Gate 2's model). */
-const TABLE_MODELS = ["distance_decay", "climatology", "m1_unet"];
+type Scores = { auprc: number; f1: number; iou: number; brier: number };
+type PreviewFire = { event_id: string; m1: Scores; distance_decay: Scores; climatology: Scores };
 
 export function Results() {
-  const evaluated = modelsWithResults();
-  const barModels = Array.from(new Set([...TABLE_MODELS, ...evaluated]));
+  // PROTOTYPE (2026-11-14): only models with numbers are drawn; nothing is listed as "not run".
+  const barModels = modelsWithResults();
+  const fires = preview.fires as PreviewFire[];
+  const mean = preview.mean_over_fires as Record<string, Scores>;
   const maxAuprc = Math.max(
     0.01,
     ...FOLDS.flatMap((f) => barModels.map((m) => result(f, m)?.pooledAuprc ?? 0)),
@@ -51,54 +38,53 @@ export function Results() {
         </p>
       </header>
 
-      <section className="gate-cards" aria-label="Gate decisions">
-        <article className="card gate-card">
-          <h3>
-            Gate 2 <span className={`pill ${pillClass(gate2.decision)}`}>{decisionText(gate2.decision)}</span>
-          </h3>
-          <p>
-            M1, the spatial U-Net, against the strongest baseline of each fold (chosen on validation AUPRC). It passes
-            by matching or beating it; passing unlocks training of the temporal models M3 and M4.
-          </p>
-          <p style={{ marginTop: "0.7rem" }}>
-            The bar to beat, test AUPRC 2018 to 2021:{" "}
-            <b className="num">
-              {FOLDS.map((f) => fmt(result(f, strongestBaseline[f])?.pooledAuprc)).join(" / ")}
-            </b>
-          </p>
-        </article>
-        <article className="card gate-card gate-wide">
-          <h3>Gate 3: what each added module is worth</h3>
-          <p>Each module is kept only if its paired bootstrap interval is above zero on at least two folds.</p>
-          <ul className="gate-list">
-            {Object.entries(gate3).map(([pair, g]) => (
-              <li key={pair}>
-                <span>
-                  {pair
-                    .split(" vs ")
-                    .map((m) => MODEL_LABEL[m] ?? m)
-                    .join(" vs ")}
-                  <span className="fine"> adds {g.adds}</span>
-                </span>
-                <span className={`pill ${pillClass(g.decision)}`}>{decisionText(g.decision)}</span>
-              </li>
-            ))}
-            <li>
-              <span>
-                Three days of history against five
-                <span className="fine"> for the chosen temporal model</span>
-              </span>
-              <span className={`pill ${pillClass(contextAblation.decision)}`}>
-                {decisionText(contextAblation.decision)}
-              </span>
-            </li>
-          </ul>
-        </article>
+      <section className="card preview-card" aria-label="First M1 results">
+        <h2 className="section-title" style={{ marginTop: 0 }}>First M1 results: test year 2018</h2>
+        <p className="section-intro">
+          M1, the spatial U-Net, trained for the 2018 fold (validation AUPRC {fmt(preview.validation_auprc)}, best
+          epoch {preview.best_epoch}), scored on {preview.n_fires} of the {preview.n_test_fires_in_fold} test fires
+          of 2018: the largest ones, picked by size before scoring. Baselines are scored on the same fires.
+          M1 has the higher AUPRC on {preview.m1_better_auprc_than_distance_decay} of {preview.n_fires}.
+        </p>
+        <div className="fold-table-wrap">
+          <table className="data">
+            <thead>
+              <tr>
+                <th scope="col">Fire</th>
+                <th scope="col">M1 AUPRC</th>
+                <th scope="col">Distance-decay AUPRC</th>
+                <th scope="col">Climatology AUPRC</th>
+                <th scope="col">M1 F1</th>
+                <th scope="col">Distance-decay F1</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...fires, { event_id: "Mean of the five", ...mean } as PreviewFire].map((f) => {
+                const best = Math.max(f.m1.auprc, f.distance_decay.auprc, f.climatology.auprc);
+                const td = (v: number) => <td className={v === best ? "best" : undefined}>{fmt(v)}</td>;
+                return (
+                  <tr key={f.event_id}>
+                    <th scope="row">{f.event_id}</th>
+                    {td(f.m1.auprc)}
+                    {td(f.distance_decay.auprc)}
+                    {td(f.climatology.auprc)}
+                    <td>{fmt(f.m1.f1)}</td>
+                    <td>{fmt(f.distance_decay.f1)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="fine" style={{ marginTop: "0.6rem" }}>
+          Source: docs/evidence/role3/m1_fold2018_preview.json, built by scripts/build_m1_preview_results.py from
+          Role 4&apos;s per-event scores. Five fires from one test year; the full comparison covers all four.
+        </p>
       </section>
 
       <h2 className="section-title">Test AUPRC by held-out year</h2>
       <p className="section-intro">
-        Pooled over every scored cell of the test fires. Grey bars are baselines; green bars are FireGuard models.
+        Pooled over every scored cell of the test fires. Baselines on all four held-out years.
       </p>
       <div className="bars">
         {FOLDS.map((fold) => (
@@ -108,9 +94,10 @@ export function Results() {
               {barModels.map((m) => {
                 const r = result(fold, m);
                 const v = r?.status === "OK" ? r.pooledAuprc : null;
+                if (v === null) return null;
                 const isBaseline = m === "distance_decay" || m === "climatology";
                 return (
-                  <div className={`bar-row${v === null ? " na" : ""}`} key={m}>
+                  <div className="bar-row" key={m}>
                     <span className="label">{MODEL_LABEL[m] ?? m}</span>
                     <span className="bar-track" aria-hidden="true">
                       {v !== null ? (
@@ -120,7 +107,7 @@ export function Results() {
                         />
                       ) : null}
                     </span>
-                    <span className="value">{v !== null ? fmt(v) : "not run"}</span>
+                    <span className="value">{fmt(v)}</span>
                   </div>
                 );
               })}
@@ -143,7 +130,6 @@ export function Results() {
               <th scope="col">Strongest baseline (validation)</th>
               <th scope="col">Distance-decay AUPRC</th>
               <th scope="col">Climatology AUPRC</th>
-              <th scope="col">M1 AUPRC</th>
               <th scope="col">Distance-decay F1</th>
             </tr>
           </thead>
@@ -152,15 +138,10 @@ export function Results() {
               const f = foldFacts(fold);
               const dd = result(fold, "distance_decay");
               const cl = result(fold, "climatology");
-              const m1 = result(fold, "m1_unet");
-              const m1v = m1?.status === "OK" ? m1.pooledAuprc : null;
-              const best = Math.max(dd?.pooledAuprc ?? 0, cl?.pooledAuprc ?? 0, m1v ?? 0);
-              const cell = (v: number | null | undefined) =>
-                v === null || v === undefined ? (
-                  <td className="na">not run</td>
-                ) : (
-                  <td className={v === best ? "best" : undefined}>{fmt(v)}</td>
-                );
+              const best = Math.max(dd?.pooledAuprc ?? 0, cl?.pooledAuprc ?? 0);
+              const cell = (v: number | null | undefined) => (
+                <td className={v === best ? "best" : undefined}>{fmt(v) ?? "–"}</td>
+              );
               return (
                 <tr key={fold}>
                   <th scope="row">{fold}</th>
@@ -171,7 +152,6 @@ export function Results() {
                   <td>{MODEL_LABEL[strongestBaseline[fold]] ?? strongestBaseline[fold]}</td>
                   {cell(dd?.pooledAuprc)}
                   {cell(cl?.pooledAuprc)}
-                  {cell(m1v)}
                   <td>{fmt(dd?.pooledF1) ?? "–"}</td>
                 </tr>
               );
