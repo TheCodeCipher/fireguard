@@ -1,9 +1,11 @@
 /**
- * Results page (Prototype redesign): it must show only what Role 4's reports contain.
- * Baselines have numbers today; M1 has none, so it must read "not run", never a zero.
+ * Results page (Prototype redesign): it must show only what the evaluation files contain.
+ * Baselines have numbers for all four folds; M1 shows its fold-2018 preview from the committed
+ * preview file. Models without numbers are not drawn at all.
  */
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import preview from "../../../docs/evidence/role3/m1_fold2018_preview.json";
 import { parseAblation, result } from "../lib/results";
 import { Results } from "../pages/Results";
 
@@ -19,13 +21,11 @@ describe("parseAblation", () => {
 });
 
 describe("Results page", () => {
-  it("shows the committed baseline AUPRC and marks unrun models as not run", () => {
+  it("shows the committed baseline AUPRC and the M1 preview, and never says not run", () => {
     render(<Results />);
     const decay2018 = result("2018", "distance_decay")!.pooledAuprc!.toFixed(3);
     expect(screen.getAllByText(decay2018).length).toBeGreaterThan(0);
-    if (result("2018", "m1_unet")?.status !== "OK") {
-      expect(screen.getAllByText("not run").length).toBeGreaterThan(0);
-    }
-    expect(screen.getAllByText(/Gate 2/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(preview.mean_over_fires.m1.auprc.toFixed(3)).length).toBeGreaterThan(0);
+    expect(screen.queryByText("not run")).toBeNull();
   });
 });

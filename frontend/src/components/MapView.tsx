@@ -40,10 +40,11 @@ interface Props {
 const userStyle = import.meta.env.VITE_BASEMAP_STYLE as string | undefined;
 
 /**
- * Basemap: CARTO Positron (light, label-free) with Esri World Hillshade at low opacity, then
- * Positron's labels on top. Pale and grey so the data colours carry the meaning; the hillshade
- * adds the terrain a wildfire runs over. Both services are free for non-commercial use with the
- * attribution shown. If the tiles cannot load (offline), the plain background still lets every
+ * Basemap: Esri World Light Gray Canvas (label-free base) with Esri World Hillshade at low
+ * opacity, then the Light Gray reference labels on top. Pale and grey so the data colours carry
+ * the meaning; the hillshade adds the terrain a wildfire runs over. None of these services needs
+ * an API key. (CARTO Positron was used before; since 25 Sep 2026 CARTO serves raster tiles only
+ * with a key and shows "API KEY REQUIRED" tiles otherwise.) If the tiles cannot load (offline), the plain background still lets every
  * forecast layer draw. Override with VITE_BASEMAP_STYLE (a MapLibre style URL).
  */
 const DEFAULT_STYLE: StyleSpecification = {
@@ -51,10 +52,12 @@ const DEFAULT_STYLE: StyleSpecification = {
   sources: {
     base: {
       type: "raster",
-      tiles: ["https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"],
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+      ],
       tileSize: 256,
-      attribution: "© OpenStreetMap contributors © CARTO",
-      maxzoom: 19,
+      attribution: "Light Gray Canvas © Esri, HERE, Garmin, © OpenStreetMap contributors",
+      maxzoom: 16,
     },
     hillshade: {
       type: "raster",
@@ -67,9 +70,11 @@ const DEFAULT_STYLE: StyleSpecification = {
     },
     labels: {
       type: "raster",
-      tiles: ["https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"],
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
+      ],
       tileSize: 256,
-      maxzoom: 19,
+      maxzoom: 16,
     },
   },
   layers: [

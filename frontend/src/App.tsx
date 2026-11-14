@@ -18,7 +18,8 @@ const PAGES: Array<[Page, string]> = [
   ["overview", "Overview"],
   ["replay", "Replay lab"],
   ["results", "Results"],
-  ["forecast", "Live forecast"],
+  // PROTOTYPE (2026-11-14): Live forecast hidden from the navigation until the trained model passes
+  // Gate 2. The page and its route code stay; #forecast now falls back to Overview.
   ["monitor", "Live monitor"],
   ["method", "Method"],
 ];

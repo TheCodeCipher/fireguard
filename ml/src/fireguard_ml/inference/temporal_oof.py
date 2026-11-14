@@ -128,8 +128,13 @@ def export_oof(
     artifact_root: Path,
     run_id: str,
     device: str = "cpu",
+    events: set[str] | None = None,
 ) -> dict:
-    """Export OOF forecasts for every fold in ``folds`` ({fold: checkpoint path})."""
+    """Export OOF forecasts for every fold in ``folds`` ({fold: checkpoint path}).
+
+    ``events`` (PROTOTYPE): export only these test events, for a quick preview. Role 4's
+    validation then reports coverage < 1, so the registry marks the run mock.
+    """
     split_hash = protocol.verified_manifest_hash()
     rows = read_manifest(protocol.manifest)
     out = Path(artifact_root) / "runs" / run_id
@@ -163,6 +168,8 @@ def export_oof(
         }
         model = model.to(dev)
         test_events = fold_events(rows, fold, "test")
+        if events is not None:
+            test_events = [e for e in test_events if e in events]
         keys = [k for k in scored_keys(protocol.eval_samples, test_events) if k in available]
         group_of = {ev: assert_held_out(ev, fold, rows) for ev in {k[0] for k in keys}}
         for k in keys:

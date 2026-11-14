@@ -10,7 +10,7 @@
  *  - Requests are limited to 5-day windows, the conservative chunk size the plan fixes until
  *    the FIRMS area-API limits are re-verified (the backend itself allows up to 31 days).
  */
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, api } from "../api/client";
 import { FIRMS_SOURCES, type FireObservation, type FirmsSource } from "../api/types";
 import { MapView, type PointFeature } from "../components/MapView";
@@ -71,6 +71,26 @@ export function LiveMonitor() {
   const [fixture, setFixture] = useState(false);
   const [error, setError] = useState<{ code: string; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Default the dates to the newest day FIRMS actually has for this source; "today" can be past
+  // the end of its feed, which the backend rejects with FIRMS_DATE_UNAVAILABLE.
+  const [latest, setLatest] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    api
+      .firmsAvailability(source)
+      .then((a) => {
+        if (!live) return;
+        setLatest(a.max_date);
+        setEnd(a.max_date);
+        const prev = isoDay(new Date(Date.parse(a.max_date) - 86_400_000));
+        setStart(prev < a.min_date ? a.min_date : prev);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [source]);
 
   const span = daysBetween(start, end);
   const rangeProblem =
@@ -176,7 +196,7 @@ export function LiveMonitor() {
           </label>
           <label>
             To (UTC)
-            <input type="date" value={end} max={isoDay(today)} onChange={(e) => setEnd(e.target.value)} />
+            <input type="date" value={end} max={latest ?? isoDay(today)} onChange={(e) => setEnd(e.target.value)} />
           </label>
         </div>
         <label>
