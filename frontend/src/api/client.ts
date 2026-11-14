@@ -13,6 +13,7 @@ import type {
   ApiErrorBody,
   FiresResponse,
   FirmsSource,
+  LiveForecast,
   MockFiresResponse,
   ReplayActual,
   ReplayForecast,
@@ -85,6 +86,32 @@ export async function fetchArtifactBytes(url: string, sessionId: string): Promis
   return await response.arrayBuffer();
 }
 
+/**
+ * Raw bytes of a live-forecast artifact URL returned by the backend. Live forecasts have no
+ * target yet, so there is no replay session and no session header.
+ */
+export async function fetchLiveArtifactBytes(url: string): Promise<ArrayBuffer> {
+  let response: Response;
+  try {
+    response = await fetch(`${BASE}${url}`);
+  } catch {
+    throw new ApiError(0, "NETWORK", "The FireGuard API is not reachable.");
+  }
+  if (!response.ok) {
+    let code = `HTTP_${response.status}`;
+    let message = "Artifact request failed";
+    try {
+      const body = (await response.json()) as ApiErrorBody;
+      code = body.error?.code ?? code;
+      message = body.error?.message ?? message;
+    } catch {
+      /* ignore */
+    }
+    throw new ApiError(response.status, code, message);
+  }
+  return await response.arrayBuffer();
+}
+
 const enc = encodeURIComponent;
 
 export const api = {
@@ -125,6 +152,9 @@ export const api = {
     if (q.minFrp !== undefined) p.set("min_frp", String(q.minFrp));
     return request<FiresResponse>(`/api/v1/fires?${p.toString()}`);
   },
+  /** Latest published live next-day forecast (404 LIVE_FORECAST_NOT_AVAILABLE if none). */
+  liveForecast: () => request<LiveForecast>(`/api/v1/live/forecasts`),
+
   /** Backend's labelled development fixture (four synthetic points); never NASA data. */
   mockFires: () => request<MockFiresResponse>(`/api/v1/firms/observations`),
 };

@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from fireguard.api.routes import events, firms, health, replays
+from fireguard.api.routes import events, firms, health, live, replays
 from fireguard.core.config import get_settings
 from fireguard.core.errors import APIError
 
@@ -67,6 +67,7 @@ app.include_router(firms.router, prefix=settings.api_v1_prefix)
 app.include_router(events.router, prefix=settings.api_v1_prefix)
 app.include_router(replays.router, prefix=settings.api_v1_prefix)
 app.include_router(replays.artifacts_router, prefix=settings.api_v1_prefix)
+app.include_router(live.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/", tags=["Root"])

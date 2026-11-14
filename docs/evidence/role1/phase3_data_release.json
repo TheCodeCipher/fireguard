@@ -1,0 +1,60 @@
+{
+  "status": "COMPLETE",
+  "events": 607,
+  "tiffs": 13607,
+  "problems": [],
+  "n_problems": 0,
+  "pinned_loader_commit": "f62dc49f2c2a6d249c071533ae5340c0d01bfb95",
+  "contract": {
+    "data_contract_version": "wsts_strict_input_v1",
+    "pinned_loader": {
+      "repo": "https://github.com/SebastianGer/WildfireSpreadTS",
+      "commit": "f62dc49f2c2a6d249c071533ae5340c0d01bfb95"
+    },
+    "channels": [
+      "viirs_m11",
+      "viirs_i2",
+      "viirs_i1",
+      "slope",
+      "aspect",
+      "elevation",
+      "binary_active_fire_mask"
+    ],
+    "processed_indices": [
+      0,
+      1,
+      2,
+      12,
+      13,
+      14,
+      39
+    ],
+    "raw_bands_0based": [
+      0,
+      1,
+      2,
+      12,
+      13,
+      14,
+      22
+    ],
+    "T": 5,
+    "target": "raw band 23 (active fire) of day D+1: NaN->0, >0",
+    "valid_mask": "all native cells; padding invalid",
+    "padding": "bottom/right to a multiple of 32; transform unchanged",
+    "standardisation": "fold-specific, train groups only; NaN -> standardised mean"
+  },
+  "contract_hash_T5": "2f06377e59f7e24cbb90c66d733b7cd63d3b86e637d83a7f901d1c03f7cd8c77",
+  "contract_hash_T1": "86db5112038a79a6b9be1390b3842cb0131832bd702e00361c71235deb176a1b",
+  "contract_hash_T3": "aab6ba044c286c4b0ed780a07f854d4a6f896b163567e30b88c639c1c2d9a735",
+  "file_sha256_lf_normalised": {
+    "wsts_file_checksums.csv": "34b807a9553715bd68e9e9a39ac5de00fde32aba88facea621076b1f273dca27",
+    "phase3_input_manifest.csv": "6fe45638063bf137acff2e36c439ba126991546542619154e2dc7a4645ce547f",
+    "terrain_qa.csv": "3b8c9e77902f382de552a0bd6cfcdf4de0a08fa5bd26ad940cee2ff89c94696d",
+    "wsts_eval_samples.csv": "cc0ae14aaf5db30bf5d8c8fd19a179ec4dd8dc93fc197db07e12d7d1da53b990",
+    "p1_loyo_fold_manifest.csv": "34e2909009ad3bb7f5aefb3ad9b5c02ec1df4c776eb2c5bf02eaf68f098e6976"
+  },
+  "active_fire_pixels": 1878679,
+  "active_fire_pixels_lost_from_binary_input_mask": 0,
+  "terrain_static_events": 607
+}

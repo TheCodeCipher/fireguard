@@ -129,14 +129,30 @@ def strongest_baseline(validation_auprc: Mapping[str, float]) -> str:
     return max(sorted(cands), key=lambda b: cands[b])
 
 
-def gate2(results: Iterable[PairedResult]) -> dict:
+def _missing(rs: list[PairedResult], required_folds: Iterable[int] | None) -> list[int]:
+    if required_folds is None:
+        return []
+    return sorted(set(required_folds) - {r.fold for r in rs})
+
+
+def gate2(results: Iterable[PairedResult], required_folds: Iterable[int] | None = None) -> dict:
     """M1 vs the strongest soft baseline of each fold.
 
     BEATS: no fold WORSE and >= 2 folds BETTER. MATCHES: no fold WORSE. FAILS: any fold WORSE.
+
+    INTEGRATION (Prototype, 2026-11-14): with ``required_folds`` given, a pass needs every one of
+    them. Without this, one trained fold that is not WORSE already reads MATCHES, i.e. a Gate 2
+    "pass" on a quarter of the protocol. A WORSE fold is still FAILS at once (more folds cannot
+    undo it); otherwise the decision is INCOMPLETE until all folds are in.
     """
     rs = list(results)
     if not rs:
         return {"decision": "NOT_RUN"}
+    missing = _missing(rs, required_folds)
+    if missing and not any(r.verdict == "WORSE" for r in rs):
+        return {"decision": "INCOMPLETE", "passes": False, "missing_folds": missing,
+                "folds": sorted(r.fold for r in rs),
+                "fold_verdicts": {str(r.fold): r.verdict for r in rs}}  # fmt: skip
     worse = [r.fold for r in rs if r.verdict == "WORSE"]
     better = [r.fold for r in rs if r.verdict == "BETTER"]
     if worse:
@@ -149,21 +165,35 @@ def gate2(results: Iterable[PairedResult]) -> dict:
             "worse_folds": worse, "folds": sorted(r.fold for r in rs)}  # fmt: skip
 
 
-def context_ablation(results: Iterable[PairedResult]) -> dict:
+def context_ablation(results: Iterable[PairedResult],
+                     required_folds: Iterable[int] | None = None) -> dict:
     rs = list(results)
     if not rs:
         return {"decision": "NOT_RUN"}
     worse = sorted(r.fold for r in rs if r.verdict == "WORSE")
+    # INTEGRATION (Prototype): PREFER_T3 is only final once every fold is in.
+    missing = _missing(rs, required_folds)
+    if missing and not worse:
+        return {"decision": "INCOMPLETE", "missing_folds": missing,
+                "folds": sorted(r.fold for r in rs)}  # fmt: skip
     return {"decision": "KEEP_T5" if worse else "PREFER_T3", "worse_folds": worse,
             "folds": sorted(r.fold for r in rs)}  # fmt: skip
 
 
-def gate3(results: Iterable[PairedResult]) -> dict:
-    """Retain the added module only if its interval is above zero on >= 2 evaluated folds."""
+def gate3(results: Iterable[PairedResult], required_folds: Iterable[int] | None = None) -> dict:
+    """Retain the added module only if its interval is above zero on >= 2 evaluated folds.
+
+    INTEGRATION (Prototype): with ``required_folds`` given and folds missing, REMOVE is not final
+    (the missing folds could still reach 2), so it reads INCOMPLETE; RETAIN stays final.
+    """
     rs = list(results)
     if not rs:
         return {"decision": "NOT_RUN"}
     above = sorted(r.fold for r in rs if r.ci_low > 0)
     keep = len(above) >= MIN_FOLDS_ABOVE_ZERO
+    missing = _missing(rs, required_folds)
+    if missing and not keep:
+        return {"decision": "INCOMPLETE", "folds_above_zero": above, "missing_folds": missing,
+                "folds": sorted(r.fold for r in rs)}  # fmt: skip
     return {"decision": "RETAIN" if keep else "REMOVE", "folds_above_zero": above,
             "folds": sorted(r.fold for r in rs)}  # fmt: skip

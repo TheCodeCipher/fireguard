@@ -172,3 +172,47 @@ export interface MockFiresResponse {
   source: string;
   mode: string;
 }
+
+// ---------------------------------------------------------------- Live forecast (retrieve-only)
+
+export interface LiveArtifact {
+  url: string; // backend-provided; the client never builds artifact URLs
+  checksum_sha256: string;
+  file_size_bytes: number;
+  content_type: string;
+}
+
+export interface LiveRegion {
+  region_id: string;
+  center_lon: number;
+  center_lat: number;
+  bbox_wgs84: [number, number, number, number];
+  height: number;
+  width: number;
+  crs: string;
+  transform: number[];
+  n_detections: number;
+  nan_fraction: Record<string, number>;
+  reflectance_source: string;
+  artifacts: { probability: LiveArtifact; fold_spread: LiveArtifact };
+}
+
+export interface LiveForecast {
+  live_run_id: string;
+  origin_date: string;
+  target_date: string;
+  horizon_hours: number;
+  generated_at: string;
+  stale: boolean;
+  stale_after_hours: number;
+  model_version: string;
+  architecture: string;
+  folds: number[];
+  probability_kind: string;
+  gate_status: "GATED" | "UNGATED";
+  is_mock: boolean;
+  data_contract_version: string;
+  firms_source: string;
+  disclaimer: string;
+  regions: LiveRegion[];
+}

@@ -100,3 +100,19 @@ def test_gate3_needs_two_folds_above_zero():
 def test_context_ablation_prefers_shorter_context_unless_worse():
     assert context_ablation([pr(2018, -0.01, 0.01)])["decision"] == "PREFER_T3"
     assert context_ablation([pr(2018, -0.02, -0.01)])["decision"] == "KEEP_T5"
+
+
+def test_gates_need_every_required_fold():
+    """INTEGRATION (Prototype): one trained fold must never read as a Gate 2 pass."""
+    req = (2018, 2019, 2020, 2021)
+    g = gate2([pr(2018, 0.01, 0.03)], required_folds=req)
+    assert g["decision"] == "INCOMPLETE" and g["passes"] is False
+    assert g["missing_folds"] == [2019, 2020, 2021]
+    assert gate2([pr(2018, -0.01, 0.02)], required_folds=req)["decision"] == "INCOMPLETE"
+    # a WORSE fold is final even with folds missing
+    assert gate2([pr(2018, -0.03, -0.01)], required_folds=req)["decision"] == "FAILS"
+    # complete folds behave exactly as before
+    assert gate2([pr(y, 0.01, 0.03) for y in req], required_folds=req)["decision"] == "BEATS"
+    assert gate3([pr(2018, -0.01, 0.02)], required_folds=req)["decision"] == "INCOMPLETE"
+    assert gate3([pr(2018, 0.01, 0.03), pr(2019, 0.01, 0.02)], required_folds=req)[
+        "decision"] == "RETAIN"

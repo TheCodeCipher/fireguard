@@ -1,0 +1,47 @@
+# Live (prospective) next-day forecasting. Read by scripts/run_live_forecast.py,
+# scripts/score_live_forecasts.py and scripts/check_live_input_parity.py.
+#
+# The channel list, context length and split are NOT defined here: they are read from the
+# checkpoints and from configs/temporal_unet.yaml, so this file cannot drift from the trained model.
+
+schema_version: 1
+
+grid:
+  crs: EPSG:32610              # every WSTS frame (data/manifests/wsts_event_spatial_metadata.csv)
+  pixel_m: 375
+  half_size_deg: 0.5           # WSTS rectangular_size: a +-0.5 degree box around the fire
+  domain_manifest: data/manifests/wsts_event_spatial_metadata.csv
+
+regions:
+  cluster_link_m: 2000         # detections closer than this belong to one fire cluster
+  min_cluster_detections: 10   # WSTS holds large fires only; tiny clusters are out of distribution
+  max_regions: 20
+
+active_fire:
+  firms_source: VIIRS_SNPP_NRT # the platform WSTS used (Suomi-NPP)
+  exclude_confidence: [l]      # WSTS drops low-confidence detections
+  buffer_m: 187.5              # half a 375 m pixel
+  # The next two are not documented for WSTS; scripts/check_live_input_parity.py reports which
+  # values reproduce real WSTS frames best. Change them only from that evidence.
+  rasterize_rule: intersects   # intersects | containing
+  day_utc_offset_hours: 0
+
+terrain:
+  provider: earth_engine       # earth_engine | mosaic
+  cache_dir: artifacts/live/static/terrain
+  mosaic_path: artifacts/live/static/srtm_terrain_epsg32610_375m.tif
+
+reflectance:
+  provider: earth_engine_v2    # earth_engine_v2 | missing
+  day_offset: 0
+  # Per-band linear map Collection 2 -> Collection 1, written by
+  # scripts/check_live_input_parity.py --fit-v2-mapping. Used only if the file exists.
+  mapping_path: configs/live/reflectance_v2_to_v1.json
+
+inference:
+  folds: [2018, 2019, 2020, 2021]
+  device: cpu
+
+publish:
+  stale_after_hours: 36
+  nan_fraction_warn: 0.5
