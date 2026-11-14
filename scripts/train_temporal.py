@@ -107,7 +107,7 @@ def main() -> None:
                         "best_epoch",
                         "val_auprc",
                         "seconds",
-                        "peak_gpu_memory_bytes",
+                        "peak_how many gpu_memory_bytes",
                     )
                 }
             )

@@ -1,0 +1,6 @@
+# Extra packages for live forecasting (fireguard_ml.live, scripts/*live*.py).
+# Install AFTER the training pipeline has finished, pinning the versions already installed so pip
+# cannot move torch / numpy (see docs/prototype/RUNBOOK.md, section 9):
+#   python -m pip freeze | Select-String '^(torch|numpy|scipy|rasterio)==' | Out-File -Encoding ascii $env:TEMP\live-pin.txt
+#   python -m pip install -r ml\requirements-live.txt -c $env:TEMP\live-pin.txt
+earthengine-api>=1.1

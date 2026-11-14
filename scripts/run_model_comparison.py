@@ -179,12 +179,17 @@ def main() -> None:
             pairs_done.append((why, r))
             diffs += per_event_differences(scores, f, cand, ref)
 
-    g2 = gate2([r for w, r in pairs_done if w.startswith("Gate 2")])
+    # INTEGRATION (Prototype, 2026-11-14): a gate only passes on all four P1 folds. A model
+    # supplied with fewer folds gets per-fold scores in ablation_results.csv and an INCOMPLETE
+    # gate, never a pass on part of the protocol.
+    p1_folds = sorted({int(r.fold_test_year) for r in rows})
+    g2 = gate2([r for w, r in pairs_done if w.startswith("Gate 2")], required_folds=p1_folds)
     g3 = {f"{c} vs {r}": {"adds": w, **gate3([x for ww, x in pairs_done
-                                              if x.candidate == c and x.reference == r])}
+                                              if x.candidate == c and x.reference == r],
+                                             required_folds=p1_folds)}
           for c, r, w in GATE3_PAIRS}  # fmt: skip
     ctx = context_ablation([x for _, x in pairs_done if (x.candidate, x.reference)
-                            == CONTEXT_ABLATION[:2]])  # fmt: skip
+                            == CONTEXT_ABLATION[:2]], required_folds=p1_folds)  # fmt: skip
     OUT.mkdir(parents=True, exist_ok=True)
     _csv(OUT / "ablation_results.csv", ablation)
     _csv(OUT / "event_bootstrap_results.csv", [

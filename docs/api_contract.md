@@ -6,10 +6,11 @@
 
 ## 1. Product and serving boundaries
 
-FireGuard exposes two distinct data products:
+FireGuard exposes three distinct data products:
 
 1. **Live Monitor:** NASA FIRMS active-fire observations. These are satellite observations, not FireGuard predictions.
 2. **Forecast & Replay Lab:** historical WSTS forecasts retrieved from precomputed out-of-fold (OOF) artifacts. The backend never runs PyTorch, loads a checkpoint, or performs inference.
+3. **Live forecast:** next-day probability maps for current fires, produced offline once a day by `scripts/run_live_forecast.py` and served as static files (section 12). The backend still never runs a model.
 
 The API never merges S-NPP, NOAA-20 and NOAA-21 observations into an unlabeled stream. WSTS historical comparison must use the matching `VIIRS_SNPP_SP` source; other products are separately labelled context.
 
@@ -233,7 +234,7 @@ Do not return raw upstream exception text or URLs, because FIRMS URLs contain th
 - WSTS replay forecasts are western-U.S. benchmark products only and must have a valid OOF fold record.
 - Target/actual data is hidden until the reveal endpoint is accepted.
 - Next-day VNP09GA observability is not an input/readiness feature in this API.
-- HLS, smoke layers, user reports and live model inference are outside this Role 5 Phase 2 implementation.
+- HLS, smoke layers and user reports are outside this Role 5 Phase 2 implementation. Live forecasts are inferred offline, never by the API (section 12).
 
 ## 9. OpenAPI
 
@@ -269,3 +270,17 @@ python scripts/register_oof_artifacts.py --manifest path\to\oof_manifest.json --
 The CLI validates the existing run/event/group/fold/protocol, model checkpoint/config hashes, data/split/channel/input manifest hashes, Level-A status, relative paths, SHA-256, file size and raster geospatial metadata. `--publish` requires both `probability_map` and `actual_target`, and only unchanged records already in `validated` state can be published. Revalidation cannot demote published artifacts; revoked artifacts are terminal. Mock manifests are allowed only in development and can never be published.
 
 See `docs/backend_artifact_storage.md`, `docs/interfaces/phase4_oof_artifact_contract.md` and `docs/interfaces/replay_api_contract.md` for the full contracts.
+
+
+## 12. Live forecast (retrieve-only)
+
+Live next-day forecasts are made **offline** by `scripts/run_live_forecast.py` (ML side), never by the API. That script passes a readiness gate (all fold checkpoints present, strict, real, byte-identical to the exported `runs/<run_id>/model_version.json`; registry bundle `real`; Gate 2 `BEATS` or `MATCHES`), forecasts every in-domain fire cluster, writes GeoTIFFs under `<artifact root>/live/<live_run_id>/`, and publishes them by writing `<artifact root>/live/index.json` last and atomically. The routes below only read that index and serve its files after a SHA-256 check. They take no session header: a live forecast has no target yet, so there is nothing to reveal.
+
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/api/v1/live/forecasts` | latest published run: `live_run_id`, `origin_date`, `target_date` (origin + 1), `generated_at`, `stale` (older than `stale_after_hours`), `model_version`, `folds`, `probability_kind`, `gate_status` (`GATED` / `UNGATED`), `is_mock`, `disclaimer`, and `regions[]` with grid, `n_detections`, `nan_fraction` per input channel and artifact `url`s |
+| GET | `/api/v1/live/forecasts/{live_run_id}/{region_id}/{layer}` | the GeoTIFF; `layer` is `probability` (mean over fold models) or `fold_spread` (max minus min over folds; disagreement, not uncertainty) |
+
+Errors: `404 LIVE_FORECAST_NOT_AVAILABLE` (nothing published, or not the published run / region), `503 LIVE_INDEX_UNREADABLE`, and the static-artifact errors of section 6 (`INVALID_ARTIFACT_URI`, `ARTIFACT_NOT_FOUND`, `ARTIFACT_CHECKSUM_MISMATCH`, `ARTIFACT_SIZE_MISMATCH`). Storage paths are never returned; clients follow the returned `url`s. The routes accept no writes and import neither `fireguard_ml` nor torch (`backend/tests/unit/test_live_runtime_separation.py`).
+
+Live maps are a research product: the model was validated on 2018-2021 western-US WSTS events only, live regions are limited to that footprint, and probabilities are uncalibrated unless `probability_kind` says otherwise. The UI shows these limits on the Live forecast tab and keeps FIRMS observations on the Live Monitor.

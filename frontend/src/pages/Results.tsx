@@ -24,7 +24,7 @@ const fmt = (v: number | null | undefined, d = 3) => (v === null || v === undefi
 const pct = (v: number) => `${(v * 100).toFixed(2)}%`;
 
 function pillClass(code: string) {
-  if (code === "NOT_RUN") return "open";
+  if (code === "NOT_RUN" || code === "INCOMPLETE") return "open";
   if (code === "FAILS" || code === "REMOVE") return "fail";
   return "done";
 }

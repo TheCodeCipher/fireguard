@@ -798,6 +798,85 @@
         }
       }
     },
+    "/api/v1/live/forecasts": {
+      "get": {
+        "tags": [
+          "Live forecast"
+        ],
+        "summary": "Latest Live Forecast",
+        "description": "The most recently published live forecast run, with one entry per fire region.",
+        "operationId": "latest_live_forecast_api_v1_live_forecasts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveForecastOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/forecasts/{live_run_id}/{region_id}/{layer}": {
+      "get": {
+        "tags": [
+          "Live forecast"
+        ],
+        "summary": "Live Forecast Artifact",
+        "description": "One GeoTIFF of the current live run, after its checksum is verified.",
+        "operationId": "live_forecast_artifact_api_v1_live_forecasts__live_run_id___region_id___layer__get",
+        "parameters": [
+          {
+            "name": "live_run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Live Run Id"
+            }
+          },
+          {
+            "name": "region_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Region Id"
+            }
+          },
+          {
+            "name": "layer",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(probability|fold_spread)$",
+              "title": "Layer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -1186,6 +1265,220 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "LiveArtifactOut": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "Relative API URL of the GeoTIFF; clients must not build it"
+          },
+          "checksum_sha256": {
+            "type": "string",
+            "title": "Checksum Sha256"
+          },
+          "file_size_bytes": {
+            "type": "integer",
+            "title": "File Size Bytes"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type",
+            "default": "image/tiff"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "checksum_sha256",
+          "file_size_bytes"
+        ],
+        "title": "LiveArtifactOut"
+      },
+      "LiveForecastOut": {
+        "properties": {
+          "live_run_id": {
+            "type": "string",
+            "title": "Live Run Id"
+          },
+          "origin_date": {
+            "type": "string",
+            "title": "Origin Date"
+          },
+          "target_date": {
+            "type": "string",
+            "title": "Target Date"
+          },
+          "horizon_hours": {
+            "type": "integer",
+            "title": "Horizon Hours"
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At"
+          },
+          "stale": {
+            "type": "boolean",
+            "title": "Stale",
+            "description": "True when generated_at is older than stale_after_hours"
+          },
+          "stale_after_hours": {
+            "type": "integer",
+            "title": "Stale After Hours"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "architecture": {
+            "type": "string",
+            "title": "Architecture"
+          },
+          "folds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Folds"
+          },
+          "probability_kind": {
+            "type": "string",
+            "title": "Probability Kind"
+          },
+          "gate_status": {
+            "type": "string",
+            "title": "Gate Status",
+            "description": "GATED, or UNGATED when Gate 2 was not passed"
+          },
+          "is_mock": {
+            "type": "boolean",
+            "title": "Is Mock"
+          },
+          "data_contract_version": {
+            "type": "string",
+            "title": "Data Contract Version"
+          },
+          "firms_source": {
+            "type": "string",
+            "title": "Firms Source"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          },
+          "regions": {
+            "items": {
+              "$ref": "#/components/schemas/LiveRegionOut"
+            },
+            "type": "array",
+            "title": "Regions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "live_run_id",
+          "origin_date",
+          "target_date",
+          "horizon_hours",
+          "generated_at",
+          "stale",
+          "stale_after_hours",
+          "model_version",
+          "architecture",
+          "folds",
+          "probability_kind",
+          "gate_status",
+          "is_mock",
+          "data_contract_version",
+          "firms_source",
+          "disclaimer",
+          "regions"
+        ],
+        "title": "LiveForecastOut"
+      },
+      "LiveRegionOut": {
+        "properties": {
+          "region_id": {
+            "type": "string",
+            "title": "Region Id"
+          },
+          "center_lon": {
+            "type": "number",
+            "title": "Center Lon"
+          },
+          "center_lat": {
+            "type": "number",
+            "title": "Center Lat"
+          },
+          "bbox_wgs84": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Bbox Wgs84"
+          },
+          "height": {
+            "type": "integer",
+            "title": "Height"
+          },
+          "width": {
+            "type": "integer",
+            "title": "Width"
+          },
+          "crs": {
+            "type": "string",
+            "title": "Crs"
+          },
+          "transform": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "maxItems": 6,
+            "minItems": 6,
+            "title": "Transform"
+          },
+          "n_detections": {
+            "type": "integer",
+            "title": "N Detections"
+          },
+          "nan_fraction": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Nan Fraction"
+          },
+          "reflectance_source": {
+            "type": "string",
+            "title": "Reflectance Source"
+          },
+          "artifacts": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LiveArtifactOut"
+            },
+            "type": "object",
+            "title": "Artifacts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "region_id",
+          "center_lon",
+          "center_lat",
+          "bbox_wgs84",
+          "height",
+          "width",
+          "crs",
+          "transform",
+          "n_detections",
+          "nan_fraction",
+          "reflectance_source",
+          "artifacts"
+        ],
+        "title": "LiveRegionOut"
       },
       "MockFireObservationsResponse": {
         "properties": {

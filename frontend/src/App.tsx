@@ -1,22 +1,24 @@
 /**
- * Application shell: one header with the five sections (Overview, Replay lab, Results, Live
- * monitor, Method). Navigation is a URL hash so links can be shared without a router dependency;
+ * Application shell: one header with the six sections (Overview, Replay lab, Results, Live
+ * forecast, Live monitor, Method). Navigation is a URL hash so links can be shared without a router dependency;
  * switching section unmounts the previous one, which also discards any replay session state.
  *
  * PROTOTYPE REDESIGN: Results added as its own tab (it reads Role 4's committed reports, see
  * lib/results.ts); white masthead with an underline tab style; a footer with data credits.
  */
 import { useEffect, useState } from "react";
+import { LiveForecastPage } from "./pages/LiveForecast";
 import { LiveMonitor } from "./pages/LiveMonitor";
 import { Methodology, Overview } from "./pages/InfoPages";
 import { ReplayLab } from "./pages/ReplayLab";
 import { Results } from "./pages/Results";
 
-export type Page = "overview" | "replay" | "results" | "monitor" | "method";
+export type Page = "overview" | "replay" | "results" | "forecast" | "monitor" | "method";
 const PAGES: Array<[Page, string]> = [
   ["overview", "Overview"],
   ["replay", "Replay lab"],
   ["results", "Results"],
+  ["forecast", "Live forecast"],
   ["monitor", "Live monitor"],
   ["method", "Method"],
 ];
@@ -95,6 +97,7 @@ export default function App() {
         {page === "overview" ? <Overview go={go} /> : null}
         {page === "replay" ? <ReplayLab /> : null}
         {page === "results" ? <Results /> : null}
+        {page === "forecast" ? <LiveForecastPage /> : null}
         {page === "monitor" ? <LiveMonitor /> : null}
         {page === "method" ? <Methodology /> : null}
       </main>

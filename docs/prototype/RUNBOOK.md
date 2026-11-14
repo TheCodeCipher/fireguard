@@ -206,3 +206,64 @@ Engine check 5 (`scripts\ee_checks_gfs_gridmet.js`). Never commit
 | `fold <Y> <model>: events differ from the frozen test split` | comparison given a subset run | export all four folds of the full dataset |
 | `OOF coverage ... < 1.0` in the registry step | subset or interrupted export | re-run export for all folds |
 | Results tab still says "not run" after the comparison | the page reads the reports at build time | restart `npm run dev` / rebuild |
+
+## 9. Live forecast (after section 5 has finished)
+
+Live forecasting reads the training outputs and never writes to them: it writes only under
+`artifacts\live\` and `backend\artifacts\live\`. It runs on CPU. Do not run any of it while
+the section 5 commands are still running; they need the machine and re-import the code.
+
+1. **Install the extra packages**, pinned to what training used so pip cannot move torch / numpy:
+
+   ```powershell
+   python -m pip freeze | Select-String '^(torch|numpy|scipy|rasterio)==' | Out-File -Encoding ascii $env:TEMP\live-pin.txt
+   python -m pip install -r ml\requirements-live.txt -c $env:TEMP\live-pin.txt
+   earthengine authenticate
+   $env:EARTHENGINE_PROJECT = "<your Google Cloud project>"
+   $env:FIRMS_MAP_KEY = "<your FIRMS key>"
+   ```
+
+2. **Smoke test** (synthetic checkpoints, about a minute, writes only `prototype_work\live_smoke\`):
+   `python scripts\smoke_live_forecast.py`. It must print `"status": "PASSED"`.
+
+3. **Input parity** (needs FIRMS + Earth Engine; uses no training output):
+
+   ```powershell
+   python scripts\check_live_input_parity.py --data-root $WSTS --fit-v2-mapping
+   ```
+
+   Read `docs\evidence\live\live_input_parity.json`. Copy `active_fire_best` into
+   `configs\live_forecast.yaml` (`rasterize_rule`, `day_utc_offset_hours`). If the `v2`
+   reflectance check fails, stop: live forecasts would be built on shifted inputs.
+
+4. **Hindcast** (scores each event with the fold that held it out):
+
+   ```powershell
+   python scripts\run_live_hindcast.py --data-root $WSTS --run-dir outputs\m1 --run m1_spatial_unet_T1_seed0 --run-id m1_t1_v1 --artifact-root artifacts
+   ```
+
+   `docs\evidence\live\live_hindcast.json` must say `"status": "PASS"`.
+
+5. **First live day**: a dry run (readiness + regions, no writes), then the real run:
+
+   ```powershell
+   python scripts\run_live_forecast.py --run-dir outputs\m1 --run m1_spatial_unet_T1_seed0 --run-id m1_t1_v1 --artifact-root artifacts --backend-artifact-root backend\artifacts --dry-run
+   python scripts\run_live_forecast.py --run-dir outputs\m1 --run m1_spatial_unet_T1_seed0 --run-id m1_t1_v1 --artifact-root artifacts --backend-artifact-root backend\artifacts
+   ```
+
+   It refuses (`NOT READY`) until Gate 2 is recorded as BEATS or MATCHES. `--allow-ungated`
+   overrides only that and the registry check, and stamps the output UNGATED (red banner).
+   Start the API with the same `FIREGUARD_ARTIFACT_ROOT` (`backend\artifacts`) and open the
+   **Live forecast** tab.
+
+6. **Every day** (Task Scheduler, about 06:30 UTC): `run_live_forecast.py` as above (origin =
+   yesterday UTC by default), then score the previous run once its target day has passed:
+   `python scripts\score_live_forecasts.py --artifact-root artifacts --live-run-id live_<origin>_m1_t1_v1`.
+   Scores accumulate in `artifacts\live\live_scores.csv` next to dilated persistence.
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `NOT READY: ... differs from the one exported` | a checkpoint changed after `export_temporal_oof.py` | re-run section 5 from the export step |
+| `NOT READY: Gate 2 decision is 'NOT_RUN'` | section 5 not finished | finish section 5, or `--allow-ungated` for development |
+| `TerrainUnavailable` / `earthengine-api is not installed` | step 1 not done | install and authenticate Earth Engine |
+| Live forecast tab: "No live forecast yet" | no run published to this artifact root | step 5, same `FIREGUARD_ARTIFACT_ROOT` |

@@ -107,6 +107,8 @@ export function decisionText(code: string): string {
   return (
     {
       NOT_RUN: "Not run yet",
+      // PROTOTYPE: a gate scored on fewer than all four folds is never shown as a pass
+      INCOMPLETE: "Incomplete: not all four years trained",
       BEATS: "Passed: beats the baseline",
       MATCHES: "Passed: matches the baseline",
       FAILS: "Failed: worse than the baseline",
