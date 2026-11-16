@@ -10,7 +10,7 @@ from pathlib import Path
 
 import torch
 
-from .temporal_unet import MODEL_REGISTRY, _TemporalBase
+from .architectures import MODEL_REGISTRY, _TemporalBase
 from .unet import UNet
 
 REQUIRED_META = ("channels", "T", "preprocessing_version", "config_hash", "fold",

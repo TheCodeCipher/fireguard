@@ -1,6 +1,6 @@
 # FireGuard strict model-input data contract, version 1 (Role 1, P3-R1-02).
 # Code: ml/src/fireguard_ml/data/wsts_dataset.py (DATA_CONTRACT_VERSION = wsts_strict_input_v1).
-# Channel decisions come from Role 4's register docs/leakage_audit.csv; this file must agree with it
+# Channel decisions come from Role 4's register docs/data/leakage_audit.csv; this file must agree with it
 # (test_wsts_dataset::test_strict_indices_agree_with_the_leakage_register).
 
 version: wsts_strict_input_v1

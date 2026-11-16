@@ -199,7 +199,7 @@ def test_spatial_checkpoint_round_trip_and_offline_export_parity(tmp_path):
 
 def test_offline_export_cli_runs_synthetic_target_blind_export(tmp_path):
     _, _, _, release_path, input_path, _, _, _ = _release_fixture(tmp_path)
-    script = REPO_ROOT / "scripts/export_spatial_oof.py"
+    script = REPO_ROOT / "scripts/checks/export_spatial_oof.py"
     result = subprocess.run(
         [
             sys.executable,

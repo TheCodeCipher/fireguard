@@ -1,31 +1,29 @@
 /**
- * Application shell: one header with the six sections (Overview, Replay lab, Results, Live
- * forecast, Live monitor, Method). Navigation is a URL hash so links can be shared without a router dependency;
+ * Application shell: one header with the five sections (Overview, Replay lab, Results, Live,
+ * Method). Navigation is a URL hash so links can be shared without a router dependency;
  * switching section unmounts the previous one, which also discards any replay session state.
  *
  * PROTOTYPE REDESIGN: Results added as its own tab (it reads Role 4's committed reports, see
  * lib/results.ts); white masthead with an underline tab style; a footer with data credits.
  */
 import { useEffect, useState } from "react";
-import { LiveForecastPage } from "./pages/LiveForecast";
-import { LiveMonitor } from "./pages/LiveMonitor";
+import { Live } from "./pages/Live";
 import { Methodology, Overview } from "./pages/InfoPages";
 import { ReplayLab } from "./pages/ReplayLab";
 import { Results } from "./pages/Results";
 
-export type Page = "overview" | "replay" | "results" | "forecast" | "monitor" | "method";
+export type Page = "overview" | "replay" | "results" | "live" | "method";
 const PAGES: Array<[Page, string]> = [
   ["overview", "Overview"],
   ["replay", "Replay lab"],
   ["results", "Results"],
-  // PROTOTYPE (2026-11-14): Live forecast hidden from the navigation until the trained model passes
-  // Gate 2. The page and its route code stay; #forecast now falls back to Overview.
-  ["monitor", "Live monitor"],
+  ["live", "Live"],
   ["method", "Method"],
 ];
 
 const fromHash = (): Page => {
-  const h = window.location.hash.replace("#", "") as Page;
+  const raw = window.location.hash.replace("#", "");
+  const h = (raw === "forecast" || raw === "monitor" ? "live" : raw) as Page; // old links
   return PAGES.some(([p]) => p === h) ? h : "overview";
 };
 
@@ -98,8 +96,7 @@ export default function App() {
         {page === "overview" ? <Overview go={go} /> : null}
         {page === "replay" ? <ReplayLab /> : null}
         {page === "results" ? <Results /> : null}
-        {page === "forecast" ? <LiveForecastPage /> : null}
-        {page === "monitor" ? <LiveMonitor /> : null}
+        {page === "live" ? <Live /> : null}
         {page === "method" ? <Methodology /> : null}
       </main>
       {page === "overview" || page === "results" || page === "method" ? (

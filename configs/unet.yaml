@@ -10,12 +10,12 @@ model:
 channel_schema:
   name: wsts_processed_v1
   status: ROLE4_STRICT_LIST_SUPPLIED_ASPECT_TRANSFORM_PENDING
-  # INTEGRATION: path corrected (the data dictionary lives at docs/data_dictionary.md in the repo;
+  # INTEGRATION: path corrected (the data dictionary lives at docs/data/data_dictionary.md in the repo;
   # docs/data/ existed only in Role 2's review copy). Channel names are now Role 1's canonical
   # names, imported by channel_schema.py from fireguard_ml.data.wsts_dataset.
-  channel_names_source: docs/data_dictionary.md (Role 1, section 12) plus docs/leakage_audit.csv (Role 4)
+  channel_names_source: docs/data/data_dictionary.md (Role 1, section 12) plus docs/data/leakage_audit.csv (Role 4)
   # INTEGRATION: the seven strict channels from Role 4's decided register, in loader order, the
-  # same list as configs/temporal_unet.yaml and configs/data/strict_input_v1.yaml. Listing them
+  # same list as configs/models.yaml and configs/data/strict_input_v1.yaml. Listing them
   # is not an approval: strict_approved stays false until the lead records the sign-off.
   selected_names:
     - viirs_m11
@@ -51,7 +51,7 @@ data:
   sample_target_day_reference: '2018-01-07'
   split_manifest_path: data/manifests/p1_loyo_fold_manifest.csv
   # INTEGRATION: was 55a3ca18..., the first freeze, withdrawn by Role 4 (footprint rule v2,
-  # docs/fire_complex_groups.md section 3a). Current frozen hash, re-verified on the file:
+  # docs/data/fire_complex_groups.md section 3a). Current frozen hash, re-verified on the file:
   split_manifest_sha256: 34e2909009ad3bb7f5aefb3ad9b5c02ec1df4c776eb2c5bf02eaf68f098e6976
   target_nodata_value: null # Role 1 must confirm target nodata semantics
   use_gfs: false

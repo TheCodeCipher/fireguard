@@ -1,8 +1,9 @@
-# Live (prospective) next-day forecasting. Read by scripts/run_live_forecast.py,
-# scripts/score_live_forecasts.py and scripts/check_live_input_parity.py.
+# Live (prospective) next-day forecasting with the best trained model (results/best_model.json).
+# Read by scripts/live/run_live_forecast.py,
+# scripts/live/score_live_forecasts.py and scripts/live/check_live_input_parity.py.
 #
 # The channel list, context length and split are NOT defined here: they are read from the
-# checkpoints and from configs/temporal_unet.yaml, so this file cannot drift from the trained model.
+# checkpoints and from configs/models.yaml, so this file cannot drift from the trained model.
 
 schema_version: 1
 
@@ -21,7 +22,7 @@ active_fire:
   firms_source: VIIRS_SNPP_NRT # the platform WSTS used (Suomi-NPP)
   exclude_confidence: [l]      # WSTS drops low-confidence detections
   buffer_m: 187.5              # half a 375 m pixel
-  # The next two are not documented for WSTS; scripts/check_live_input_parity.py reports which
+  # The next two are not documented for WSTS; scripts/live/check_live_input_parity.py reports which
   # values reproduce real WSTS frames best. Change them only from that evidence.
   rasterize_rule: intersects   # intersects | containing
   day_utc_offset_hours: 0
@@ -34,8 +35,11 @@ terrain:
 reflectance:
   provider: earth_engine_v2    # earth_engine_v2 | missing
   day_offset: 0
+  # VNP09GA reaches Earth Engine with a delay of a few days: use the newest earlier day up to
+  # this many days old (never a later day). The age used is recorded in each forecast.
+  max_age_days: 7
   # Per-band linear map Collection 2 -> Collection 1, written by
-  # scripts/check_live_input_parity.py --fit-v2-mapping. Used only if the file exists.
+  # scripts/live/check_live_input_parity.py --fit-v2-mapping. Used only if the file exists.
   mapping_path: configs/live/reflectance_v2_to_v1.json
 
 inference:

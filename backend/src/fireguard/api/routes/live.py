@@ -1,6 +1,6 @@
 """Live next-day forecasts: retrieve-only.
 
-The forecasts are produced offline by ``scripts/run_live_forecast.py`` (ML side), which writes
+The forecasts are produced offline by ``scripts/live/run_live_forecast.py`` (ML side), which writes
 GeoTIFFs and, last and atomically, ``live/index.json`` under the artifact root. These routes only
 read that index and serve its files after a SHA-256 check. Nothing here imports ``fireguard_ml``
 or torch, runs a model, or accepts a write. A live forecast has no target yet, so there is no

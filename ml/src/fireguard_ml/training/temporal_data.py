@@ -5,7 +5,7 @@ task (P3-R1-05). This module fixes the *interface* those batches must satisfy, c
 against it, and pads samples for the U-Nets. Any loader that implements ``TemporalSampleSource``
 plugs into ``temporal_trainer`` and ``temporal_oof`` unchanged.
 
-Contract (docs/temporal_input_contract.md):
+Contract (docs/contracts/temporal_input_contract.md):
 
 * ``x``: ``[T, C, H, W]`` float32, frames ordered oldest -> newest, channels in exactly the strict
   order of the run config, finite everywhere (the loader decides fill values; invalid cells are

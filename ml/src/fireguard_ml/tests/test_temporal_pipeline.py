@@ -27,6 +27,7 @@ from fireguard_ml.data.event_splits import (  # noqa: E402
     write_manifest,
 )
 from fireguard_ml.models.checkpointing import load_checkpoint  # noqa: E402
+from fireguard_ml.training.losses import masked_bce_dice_loss  # noqa: E402
 from fireguard_ml.training.normalization import (  # noqa: E402
     NormalizationLeakError,
     fit_normalizer,
@@ -39,10 +40,12 @@ from fireguard_ml.training.temporal_data import (  # noqa: E402
     unpad,
     validate_sample,
 )
-from fireguard_ml.training.temporal_trainer import (  # noqa: E402
+from fireguard_ml.training.trainer import (  # noqa: E402
     ProtocolFiles,
     TemporalRunConfig,
-    _role3_masked_bce_dice,
+    flip_sample,
+    lr_factor,
+    pad_collate,
     train_fold,
 )
 
@@ -52,7 +55,7 @@ YEARS = (2018, 2019, 2020, 2021)
 
 @pytest.fixture(scope="module")
 def register_path(repo_root):
-    return repo_root / "docs" / "leakage_audit.csv"
+    return repo_root / "docs" / "data" / "leakage_audit.csv"
 
 
 @pytest.fixture(scope="module")
@@ -94,7 +97,7 @@ def tiny(model, channels, **kw):
         depth=2,
         max_epochs=2,
         patience=5,
-        grad_accum=2,
+        effective_batch=2,
         amp=False,
         **kw,
     )
@@ -192,21 +195,43 @@ def test_missing_measurements_are_ignored_by_the_fit_and_imputed_with_the_train_
 # ----------------------------------------------------------------------------- loss
 
 
-def test_loss_ignores_padding_and_matches_role2_when_installed():
+def test_loss_ignores_padding():
     logits = torch.randn(1, 1, 6, 6)
     y = (torch.rand(1, 1, 6, 6) > 0.8).float()
     m = torch.ones(1, 1, 6, 6, dtype=torch.bool)
     m[..., -2:, :] = False
     y2 = y.clone()
     y2[..., -2:, :] = 1 - y2[..., -2:, :]
-    assert torch.allclose(
-        _role3_masked_bce_dice(logits, y, m), _role3_masked_bce_dice(logits, y2, m)
-    )
-    try:
-        from fireguard_ml.training.losses import masked_bce_dice_loss
-    except ImportError:
-        pytest.skip("Role 2's losses module not installed yet")
-    assert torch.allclose(masked_bce_dice_loss(logits, y, m), _role3_masked_bce_dice(logits, y, m))
+    assert torch.allclose(masked_bce_dice_loss(logits, y, m), masked_bce_dice_loss(logits, y2, m))
+
+
+def test_flips_move_pixels_and_mirror_aspect_only_east_west(channels):
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=(2, len(channels), 5, 7)).astype(np.float32)
+    y = (rng.random((5, 7)) > 0.7).astype(np.float32)
+    a = list(channels).index("aspect")
+    xh, yh = flip_sample(x, y, channels, True, False)
+    assert np.array_equal(yh, y[:, ::-1])
+    assert np.allclose(xh[:, a], -x[:, a, :, ::-1])  # sin(aspect): east <-> west
+    other = [i for i in range(len(channels)) if i != a]
+    assert np.allclose(xh[:, other], x[:, other, :, ::-1])
+    xv, yv = flip_sample(x, y, channels, False, True)
+    assert np.array_equal(yv, y[::-1]) and np.allclose(xv, x[:, :, ::-1])  # aspect unchanged
+
+
+def test_pad_collate_masks_padding():
+    items = [(np.ones((1, 2, 30, 20), np.float32), np.ones((30, 20), np.float32),
+              np.ones((30, 20), bool)),
+             (np.ones((1, 2, 33, 10), np.float32), np.zeros((33, 10), np.float32),
+              np.ones((33, 10), bool))]
+    x, y, m = pad_collate(items, 32)
+    assert x.shape == (2, 1, 2, 64, 32) and m[0].sum() == 600 and m[1].sum() == 330
+    assert x[0, :, :, 30:].abs().sum() == 0 and not m[1, 0, 33:].any()
+
+
+def test_learning_rate_warms_up_then_decays():
+    f = [lr_factor(s, 100, 10, 0.01) for s in range(100)]
+    assert f[0] == 0.1 and abs(f[9] - 1.0) < 1e-9 and f[50] < f[10] and abs(f[99] - 0.01) < 1e-3
 
 
 # ----------------------------------------------------------------------------- training
@@ -245,21 +270,39 @@ def test_train_fold_end_to_end_never_touches_test_events(tmp_path, channels, reg
     assert meta["split_manifest_hash"] == sha256_file(proto.manifest)
     sel = json.loads((fdir / f"{run}.selection.json").read_text())
     assert sel["fitted_on"] == "validation" and sel["fold"] == 2020
-    log = [json.loads(x) for x in (fdir / f"{run}.log.jsonl").read_text().splitlines()]
+    with (fdir / f"{run}.history.csv").open() as f:
+        log = list(csv.DictReader(f))
     assert 1 <= len(log) <= 2 and all("val_auprc" in r for r in log)
     assert summary["checkpoint_sha256"] and summary["parameters"] > 0
 
 
-def test_event_blocked_order_is_a_seeded_permutation_grouped_by_event():
-    import random
+def test_interrupted_fold_resumes_from_the_last_epoch(tmp_path, channels, register_path):
+    src, proto, _ = make_world(tmp_path, channels, register_path)
+    cfg = replace(tiny("m3_stacked_unet", channels), max_epochs=3, patience=10)
+    out = tmp_path / "out"
+    full = train_fold(cfg, src, proto, 2020, tmp_path / "ref", "cpu")
 
-    from fireguard_ml.training.temporal_trainer import event_blocked_order
+    class Stop(Exception):
+        pass
 
-    keys = [(f"e{i % 4}", date(2020, 1, 1) + timedelta(days=i)) for i in range(20)]
-    o1 = event_blocked_order(keys, random.Random(3))
-    assert sorted(o1) == sorted(keys) and o1 == event_blocked_order(keys, random.Random(3))
-    runs = [k[0] for i, k in enumerate(o1) if i == 0 or o1[i - 1][0] != k[0]]
-    assert len(runs) == 4  # each event appears as one contiguous block
+    def log_then_stop(msg):  # simulate a power cut right after epoch 0 is saved
+        if msg.startswith("  epoch 0 done"):
+            raise Stop
+
+    with pytest.raises(Stop):
+        train_fold(cfg, src, proto, 2020, out, "cpu", log=log_then_stop)
+    fdir = out / "fold_2020"
+    run = cfg.run_name()
+    assert (fdir / f"{run}.last.pt").exists() and not (fdir / f"{run}.pt").exists()
+    lines = []
+    resumed = train_fold(cfg, src, proto, 2020, out, "cpu", log=lines.append)
+    assert any("resuming after epoch 0" in x for x in lines)
+    assert not (fdir / f"{run}.last.pt").exists() and not (fdir / f"{run}.best_weights.pt").exists()
+    assert resumed["epochs_run"] == full["epochs_run"] == 3
+    assert resumed["val_auprc"] == pytest.approx(full["val_auprc"], abs=1e-6)
+    again = []
+    train_fold(cfg, src, proto, 2020, out, "cpu", log=again.append)
+    assert any("skipping" in x for x in again)
 
 
 def test_training_refuses_provisional_splits(tmp_path, channels, register_path):
@@ -338,6 +381,7 @@ def test_oof_export_is_fold_safe_and_pre_reveal_clean(tmp_path, channels, regist
 
 def test_temporal_config_lists_exactly_the_registers_strict_channels(repo_root, channels):
     yaml = pytest.importorskip("yaml")
-    cfg = yaml.safe_load((repo_root / "configs" / "temporal_unet.yaml").read_text())
+    cfg = yaml.safe_load((repo_root / "configs" / "models.yaml").read_text())
     assert tuple(cfg["data"]["channels"]) == channels
-    assert cfg["ablation"]["context_lengths"][0] == cfg["data"]["n_leading_observations"]
+    assert cfg["models"]["m3"]["T"] == cfg["data"]["n_leading_observations"]
+    assert cfg["ablations"]["m3_T3"]["T"] < cfg["models"]["m3"]["T"]

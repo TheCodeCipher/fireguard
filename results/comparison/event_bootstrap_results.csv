@@ -1,0 +1,33 @@
+comparison,fold,candidate,reference,metric,mean_diff,ci_low,ci_high,n_events,n_groups,excluded_events,share_above_zero,verdict
+baseline sanity,2018,distance_decay,climatology,auprc,0.00587437727492709,0.00508002721099367,0.006617855213063599,216,146,4,1.0,BETTER
+Gate 2: M1 vs strongest soft baseline,2018,m1_unet,distance_decay,auprc,0.044245258628701385,0.03196039703506528,0.05526984885063824,216,146,4,1.0,BETTER
+Baseline check: m2_attention_res_unet vs strongest soft baseline,2018,m2_attention_res_unet,distance_decay,auprc,0.05702619744626863,0.04507255958240796,0.06799454704280168,216,146,4,1.0,BETTER
+Baseline check: m3_stacked_unet vs strongest soft baseline,2018,m3_stacked_unet,distance_decay,auprc,0.040758020805013416,0.02752992490966377,0.052527022811527414,216,146,4,1.0,BETTER
+Baseline check: m4_convlstm_unet vs strongest soft baseline,2018,m4_convlstm_unet,distance_decay,auprc,0.04566213166432651,0.034699861444914534,0.05522900553393504,216,146,4,1.0,BETTER
+residual blocks + attention gates,2018,m2_attention_res_unet,m1_unet,auprc,0.012780938817567247,0.008614211170049652,0.01696643031561218,216,146,4,1.0,BETTER
+"temporal context (5 days, stacked)",2018,m3_stacked_unet,m1_unet,auprc,-0.0034872378236879714,-0.009263403549337254,0.0017015126768895402,216,146,4,0.0885,NO_DIFFERENCE_SHOWN
+recurrence (ConvLSTM),2018,m4_convlstm_unet,m3_stacked_unet,auprc,0.004904110859313097,0.00011661031653034109,0.010047870455663388,216,146,4,0.9765,BETTER
+baseline sanity,2019,distance_decay,climatology,auprc,0.004567835032440327,0.003420497802305563,0.0057051318905109736,88,61,0,1.0,BETTER
+Gate 2: M1 vs strongest soft baseline,2019,m1_unet,distance_decay,auprc,0.02715430365467703,0.010958814762292973,0.046953142095699986,88,61,0,0.999,BETTER
+Baseline check: m2_attention_res_unet vs strongest soft baseline,2019,m2_attention_res_unet,distance_decay,auprc,0.02489139911884406,0.007535926993763522,0.044529587229369845,88,61,0,0.9985,BETTER
+Baseline check: m3_stacked_unet vs strongest soft baseline,2019,m3_stacked_unet,distance_decay,auprc,0.034152390914153015,0.017874552923222393,0.054282747924173015,88,61,0,1.0,BETTER
+Baseline check: m4_convlstm_unet vs strongest soft baseline,2019,m4_convlstm_unet,distance_decay,auprc,0.02409289434334698,0.007637798042607936,0.04344892505925961,88,61,0,0.9975,BETTER
+residual blocks + attention gates,2019,m2_attention_res_unet,m1_unet,auprc,-0.0022629045358329705,-0.010659758905189548,0.005680429490598781,88,61,0,0.2815,NO_DIFFERENCE_SHOWN
+"temporal context (5 days, stacked)",2019,m3_stacked_unet,m1_unet,auprc,0.006998087259475985,-0.0026872358473044537,0.01764955530288648,88,61,0,0.917,NO_DIFFERENCE_SHOWN
+recurrence (ConvLSTM),2019,m4_convlstm_unet,m3_stacked_unet,auprc,-0.010059496570806035,-0.018677874443923492,-0.0007799863562103251,88,61,0,0.018,WORSE
+baseline sanity,2020,distance_decay,climatology,auprc,0.005259792074346764,0.004561102578527392,0.005956082436385618,173,134,4,1.0,BETTER
+Gate 2: M1 vs strongest soft baseline,2020,m1_unet,distance_decay,auprc,0.04715316507357132,0.03536492047871682,0.05941114575287126,173,134,4,1.0,BETTER
+Baseline check: m2_attention_res_unet vs strongest soft baseline,2020,m2_attention_res_unet,distance_decay,auprc,0.0472206482234207,0.03573081986086454,0.058625032390597125,173,134,4,1.0,BETTER
+Baseline check: m3_stacked_unet vs strongest soft baseline,2020,m3_stacked_unet,distance_decay,auprc,0.05415827945457301,0.04170281408548894,0.06739984970565549,173,134,4,1.0,BETTER
+Baseline check: m4_convlstm_unet vs strongest soft baseline,2020,m4_convlstm_unet,distance_decay,auprc,0.03989013171218443,0.027966034319319093,0.05217996550648899,173,134,4,1.0,BETTER
+residual blocks + attention gates,2020,m2_attention_res_unet,m1_unet,auprc,6.748314984938676e-05,-0.004491541418791256,0.0051752751830613005,173,134,4,0.514,NO_DIFFERENCE_SHOWN
+"temporal context (5 days, stacked)",2020,m3_stacked_unet,m1_unet,auprc,0.0070051143810016935,0.0002610109540604105,0.015023326633679312,173,134,4,0.981,BETTER
+recurrence (ConvLSTM),2020,m4_convlstm_unet,m3_stacked_unet,auprc,-0.01426814774238858,-0.022769451682691403,-0.00742288552889206,173,134,4,0.0,WORSE
+baseline sanity,2021,distance_decay,climatology,auprc,0.006448594729536239,0.005602670754836856,0.007284841049776993,122,102,0,1.0,BETTER
+Gate 2: M1 vs strongest soft baseline,2021,m1_unet,distance_decay,auprc,0.07957902202171183,0.06339288966797241,0.09480460191675226,122,102,0,1.0,BETTER
+Baseline check: m2_attention_res_unet vs strongest soft baseline,2021,m2_attention_res_unet,distance_decay,auprc,0.0640256116346509,0.0495366888463002,0.07715145503196913,122,102,0,1.0,BETTER
+Baseline check: m3_stacked_unet vs strongest soft baseline,2021,m3_stacked_unet,distance_decay,auprc,0.07098758371932076,0.054516021218229384,0.08610088575626004,122,102,0,1.0,BETTER
+Baseline check: m4_convlstm_unet vs strongest soft baseline,2021,m4_convlstm_unet,distance_decay,auprc,0.06570816154098097,0.05078707818890764,0.08022679954403883,122,102,0,1.0,BETTER
+residual blocks + attention gates,2021,m2_attention_res_unet,m1_unet,auprc,-0.015553410387060936,-0.021228390439641066,-0.010374918422219895,122,102,0,0.0,WORSE
+"temporal context (5 days, stacked)",2021,m3_stacked_unet,m1_unet,auprc,-0.008591438302391063,-0.016712351953935924,-0.000801541198423994,122,102,0,0.0145,WORSE
+recurrence (ConvLSTM),2021,m4_convlstm_unet,m3_stacked_unet,auprc,-0.005279422178339805,-0.01282784151671512,0.002775146093212817,122,102,0,0.0975,NO_DIFFERENCE_SHOWN

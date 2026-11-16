@@ -149,7 +149,7 @@ class LiveTemporalSource:
             region = self._regions[region_id]
             try:
                 refl = np.asarray(self._refl.fetch(region, day), dtype=np.float32)
-                source = self._refl.name
+                source = getattr(self._refl, "last_source", self._refl.name)
             except ReflectanceUnavailable:
                 refl = MissingReflectanceProvider().fetch(region, day)
                 source = MissingReflectanceProvider.name

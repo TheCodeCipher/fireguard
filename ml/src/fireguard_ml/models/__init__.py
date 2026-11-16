@@ -1,6 +1,13 @@
-"""FireGuard ML model implementations."""
+"""FireGuard forecast models M1-M4 (architectures.py) and their checkpoint format."""
 
-from .temporal_unet import ConvLSTMUNet, StackedDaysUNet
+from .architectures import (
+    MODEL_REGISTRY,
+    AttentionResUNet,
+    ConvLSTMUNet,
+    SpatialUNet,
+    StackedDaysUNet,
+)
 from .unet import UNet
 
-__all__ = ["UNet", "StackedDaysUNet", "ConvLSTMUNet"]
+__all__ = ["MODEL_REGISTRY", "SpatialUNet", "AttentionResUNet", "StackedDaysUNet", "ConvLSTMUNet",
+           "UNet"]

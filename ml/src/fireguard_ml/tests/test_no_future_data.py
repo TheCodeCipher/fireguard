@@ -11,7 +11,8 @@ from fireguard_ml.data.channel_policy import (
     strict_channels,
 )
 
-# Decided 2026-11-13 from the evidence in docs/leakage_audit.csv. If a channel's status changes,
+# Decided 2026-11-13 from the evidence in docs/data/leakage_audit.csv. If a channel's status
+# changes,
 # update this list in the same commit as the register so the change is reviewed deliberately.
 EXPECTED_STRICT = [
     "viirs_m11",
@@ -26,7 +27,7 @@ EXPECTED_STRICT = [
 
 @pytest.fixture(scope="module")
 def register(repo_root):
-    return load_register(repo_root / "docs" / "leakage_audit.csv")
+    return load_register(repo_root / "docs" / "data" / "leakage_audit.csv")
 
 
 def test_strict_list_is_exactly_the_reviewed_list(register):
@@ -57,7 +58,7 @@ def test_requesting_an_excluded_channel_raises(register):
 
 def test_role3_temporal_config_excludes_exactly_the_registers_gfs_indices(register, repo_root):
     yaml = pytest.importorskip("yaml")
-    cfg_path = repo_root / "configs" / "temporal_unet.yaml"
+    cfg_path = repo_root / "configs" / "models.yaml"
     if not cfg_path.exists():
         pytest.skip("Role 3 config not present")
     cfg = yaml.safe_load(cfg_path.read_text())

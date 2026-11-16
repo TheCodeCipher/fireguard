@@ -12,13 +12,13 @@ nothing depends on that choice.
 | Overview | P2-R6-01, P4-R6-04 | What FireGuard forecasts, what it does not do, current status |
 | Replay lab | P3-R6-01..03/05, P4-R6-01..04 | Choose fire and day, load the out-of-fold forecast, reveal the observed fire, compare, scores, provenance, downloads |
 | Results | P4-R6-04 (added in the redesign) | Gate verdicts and test AUPRC per fold, read at build time from `reports/phase3/` and `docs/evidence/role4/` (`src/lib/results.ts`); unrun models show "not run" |
-| Live monitor | P2-R6-02, P3-R6-04 | NASA FIRMS detections through the backend proxy, per satellite/product, observation only |
+| Live | P2-R6-02, P3-R6-04 | the daily next-day forecast of the best model and NASA FIRMS detections (backend proxy, per satellite/product) as two separate map layers |
 | Method | P2-R6-03, P4-R6-04 | Inputs, models, evaluation protocol, why the target is sealed, data sources |
 
 ## Run (PowerShell 5.1, one command per line)
 
 The backend must be running on `http://127.0.0.1:8000` (see `backend/README.md` or
-`docs/prototype/RUNBOOK.md`). The dev server proxies `/api` to it.
+`docs/history/old_RUNBOOK.md`). The dev server proxies `/api` to it.
 
 ```powershell
 cd frontend
@@ -91,13 +91,13 @@ to rows 146-297 and columns 41-227, each cell 3x3 px; dark `#7d3b35` = detected 
 
 ```
 src/
-  api/types.ts, api/client.ts     typed API client (mirrors backend schemas / docs/openapi.json)
+  api/types.ts, api/client.ts     typed API client (mirrors backend schemas / docs/contracts/openapi.json)
   replay/replayState.ts           replay state machine (pure)
   lib/raster.ts, lib/geo.ts       GeoTIFF decoding, colour maps, georeferencing
   components/MapView.tsx          MapLibre map: raster overlays and FIRMS points
   components/ReplayParts.tsx      pixel canvas, legends, metrics table, provenance, mock banner
   lib/results.ts                  build-time reader for Role 4's reports (Results + Overview)
-  pages/ReplayLab.tsx, Results.tsx, LiveMonitor.tsx, InfoPages.tsx
+  pages/ReplayLab.tsx, Results.tsx, Live.tsx, InfoPages.tsx
   assets/                         Overview hero images (real VIIRS detections)
   App.tsx, main.tsx, styles.css
   __tests__/                      Vitest + Testing Library

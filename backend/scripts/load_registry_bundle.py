@@ -1,4 +1,4 @@
-"""Load a registry bundle (from scripts/build_backend_registry.py) into the replay database.
+"""Load a registry bundle (from scripts/pipeline/build_backend_registry.py) into the replay database.
 
 Run from backend/ (backend environment, no PyTorch needed):
 
@@ -8,7 +8,7 @@ Run from backend/ (backend environment, no PyTorch needed):
     python scripts/load_registry_bundle.py --bundle <...>/registry_bundle.json --publish
 
 INTEGRATION (Prototype). Role 5 built the registry (validation, lifecycle, storage checks) and the
-API; Role 4 built the reveal package; scripts/build_backend_registry.py converts one into the
+API; Role 4 built the reveal package; scripts/pipeline/build_backend_registry.py converts one into the
 other. This script is the last step: it puts the bundle into the database WITHOUT bypassing any
 Role 5 rule, by calling Role 5's own code for everything that matters:
 

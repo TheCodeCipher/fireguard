@@ -129,8 +129,8 @@ def test_normaliser_of_another_fold_is_refused(tmp_path):
 GATE_CASES = {
     "registry mock": (dict(run_kw={"registry_mode": "mock"}), None, "mode is not 'real'"),
     "registry missing": (dict(run_kw={"registry_mode": None}), None, "registry_bundle.json"),
-    "gate2 fails": ({}, dict(gate2="FAILS"), "Gate 2 decision is 'FAILS'"),
-    "gate2 not run": ({}, dict(gate2="NOT_RUN"), "Gate 2 decision is 'NOT_RUN'"),
+    "gate2 fails": ({}, dict(gate2="FAILS"), "baseline check for m1_unet is 'FAILS'"),
+    "gate2 not run": ({}, dict(gate2="NOT_RUN"), "baseline check for m1_unet is 'NOT_RUN'"),
     "gate2 missing": ({}, dict(gate2=None), "gate_decisions.json"),
     "gate2 other split": ({}, dict(gate2="BEATS", split="f" * 64), "different split manifest"),
 }

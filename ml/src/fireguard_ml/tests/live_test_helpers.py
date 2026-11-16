@@ -16,13 +16,13 @@ import yaml
 from fireguard_ml.data.event_splits import sha256_file
 from fireguard_ml.data.wsts_dataset import DATA_CONTRACT_VERSION, RAW_BANDS, RAW_DESCRIPTIONS
 from fireguard_ml.live.grid import LiveRegion, region_for_center
+from fireguard_ml.models.architectures import SpatialUNet, StackedDaysUNet
 from fireguard_ml.models.checkpointing import save_checkpoint
-from fireguard_ml.models.temporal_unet import SpatialUNet, StackedDaysUNet
 from fireguard_ml.training.normalization import DEFAULT_NO_STANDARDIZE, FoldNormalizer
 
 REPO = next(p for p in Path(__file__).resolve().parents
             if (p / "ml").is_dir() and (p / "docs").is_dir())
-CHANNELS = tuple(yaml.safe_load((REPO / "configs" / "temporal_unet.yaml").read_text())
+CHANNELS = tuple(yaml.safe_load((REPO / "configs" / "models.yaml").read_text())
                  ["data"]["channels"])
 RUN = "m1_spatial_unet_base8_T1_seed0"
 RUN_ID = "m1_t1_test"
@@ -169,13 +169,14 @@ def make_repo_root(tmp: Path, gate2: str | None = "BEATS", split: str | None = N
     root = tmp / "repo"
     (root / "configs").mkdir(parents=True)
     (root / "data" / "manifests").mkdir(parents=True)
-    shutil.copy(REPO / "configs" / "temporal_unet.yaml", root / "configs")
+    shutil.copy(REPO / "configs" / "models.yaml", root / "configs")
     shutil.copy(REPO / "data" / "manifests" / "p1_loyo_fold_manifest.csv",
                 root / "data" / "manifests")
     if gate2 is not None:
-        (root / "reports" / "phase3").mkdir(parents=True)
-        (root / "reports" / "phase3" / "gate_decisions.json").write_text(json.dumps(
-            {"split_manifest_sha256": split or split_hash(), "gate2": {"decision": gate2}}))
+        (root / "results" / "comparison").mkdir(parents=True)
+        (root / "results" / "comparison" / "gate_decisions.json").write_text(json.dumps(
+            {"split_manifest_sha256": split or split_hash(), "gate2": {"decision": gate2},
+             "baseline_check_by_model": {"m1_unet": {"decision": gate2}}}))
     return root
 
 

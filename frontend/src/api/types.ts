@@ -1,6 +1,6 @@
 /**
  * Types mirroring the backend's Pydantic schemas (backend/src/fireguard/schemas/*.py, published as
- * docs/openapi.json). Only fields the UI reads are listed; extra fields from the API are ignored.
+ * docs/contracts/openapi.json). Only fields the UI reads are listed; extra fields from the API are ignored.
  * If Role 5 changes a schema, change it here in the same pull request.
  */
 

@@ -11,7 +11,6 @@ from pathlib import Path
 from fireguard.core.database import Base, SessionLocal, engine
 from fireguard.models import ForecastArtifact, ForecastRun, ModelVersion, WildfireEvent
 
-
 ARTIFACT_DIR = Path("artifacts/mock")
 ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
 (ARTIFACT_DIR / "probability_map.json").write_text(

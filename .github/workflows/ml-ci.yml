@@ -18,7 +18,7 @@ on:
       - "configs/**"
       - "scripts/**"
       - "data/manifests/**"
-      - "docs/leakage_audit.csv"
+      - "docs/data/leakage_audit.csv"
       - ".github/workflows/ml-ci.yml"
   pull_request:
     branches:
@@ -28,7 +28,7 @@ on:
       - "configs/**"
       - "scripts/**"
       - "data/manifests/**"
-      - "docs/leakage_audit.csv"
+      - "docs/data/leakage_audit.csv"
       - ".github/workflows/ml-ci.yml"
 
 permissions:

@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 import torch
 
+from fireguard_ml.models.architectures import ConvLSTMUNet, StackedDaysUNet
 from fireguard_ml.models.checkpointing import REQUIRED_META, load_checkpoint, save_checkpoint
-from fireguard_ml.models.temporal_unet import ConvLSTMUNet, StackedDaysUNet
 
 T, C, BASE, DEPTH = 5, 6, 8, 5
 CHANNELS = [f"ch{i}" for i in range(C)]
@@ -112,12 +112,12 @@ def test_checkpoint_checks_channel_count_and_T(tmp_path):
 def _repo_root() -> Path:
     """Walk up to the shared configs/ folder, so moving this file cannot break the test."""
     for parent in Path(__file__).resolve().parents:
-        if (parent / "configs" / "temporal_unet.yaml").is_file():
+        if (parent / "configs" / "models.yaml").is_file():
             return parent
-    raise RuntimeError("configs/temporal_unet.yaml not found above " + __file__)
+    raise RuntimeError("configs/models.yaml not found above " + __file__)
 
 
-CFG_PATH = _repo_root() / "configs" / "temporal_unet.yaml"
+CFG_PATH = _repo_root() / "configs" / "models.yaml"
 
 
 def test_strict_config_has_no_gfs():
@@ -127,19 +127,17 @@ def test_strict_config_has_no_gfs():
 
 def test_strict_config_is_consistent_with_the_models():
     yaml = pytest.importorskip("yaml")
-    from fireguard_ml.models.temporal_unet import MODEL_REGISTRY
+    from fireguard_ml.models.architectures import MODEL_REGISTRY
 
     cfg = yaml.safe_load(CFG_PATH.read_text(encoding="utf8"))
     assert cfg["strict"] is True
-    assert cfg["data"]["geometric_augmentation"] is False
     assert cfg["data"]["frame_order"] == "oldest_to_newest"
-    # processed loader indices of the five forecast channels (docs/data_dictionary.md)
+    # processed loader indices of the five forecast channels (docs/data/data_dictionary.md)
     assert cfg["data"]["excluded_processed_indices"] == [33, 34, 35, 36, 37]
-    assert cfg["training"]["enabled"] is False  # Phase 2 delivers interfaces, not training runs
+    assert list(cfg["models"]) == ["m1", "m2", "m3", "m4"]
     for m in cfg["models"].values():
-        # INTEGRATION (Prototype): M1 is the one-day model (T=1); M3/M4 use the config's T.
-        t = 1 if m["model_type"] == "m1_spatial_unet" else cfg["data"]["n_leading_observations"]
-        kwargs = {k: v for k, v in m.items() if k != "model_type"}
+        t = m["T"]
+        kwargs = {k: v for k, v in m.items() if k not in ("model_type", "report_name", "T")}
         assert 2 ** kwargs["depth"] == cfg["data"]["pad_multiple"]
         model = MODEL_REGISTRY[m["model_type"]](c_strict=C, T=t, **kwargs)
         assert model(torch.randn(1, t, C, 32, 64)).shape == (1, 1, 32, 64)
@@ -165,3 +163,12 @@ def test_loaded_checkpoint_reports_whether_it_was_strict(cls, tmp_path):
                     strict=False)
     assert load_checkpoint(strict_path)[0].strict_checkpoint is True
     assert load_checkpoint(bench_path)[0].strict_checkpoint is False
+
+
+def test_m4_has_temporal_memory_at_the_two_coarsest_levels():
+    m = ConvLSTMUNet(c_strict=C, T=3, base=8, depth=3)
+    assert len(m.temporal) == 2
+    assert [cell.cells[0].hidden_ch for cell in m.temporal] == m.enc.ch[-2:]
+    x = torch.randn(1, 3, C, 32, 32, requires_grad=True)
+    m(x).sum().backward()
+    assert x.grad[:, 0].abs().sum() > 0  # the oldest day still reaches the output

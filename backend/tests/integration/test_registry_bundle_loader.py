@@ -1,7 +1,8 @@
 """Integration tests for scripts/load_registry_bundle.py (added during the Prototype integration).
 
-The bundle is what scripts/build_backend_registry.py writes from Role 4's reveal package. These
-tests build small bundles by hand (byte files; Role 5's registry checks bytes, checksums and
+The bundle is what scripts/pipeline/build_backend_registry.py writes from Role 4's reveal
+package. These tests build small bundles by hand (byte files; Role 5's registry checks bytes,
+checksums and
 metadata, it never parses rasters) and check that loading them goes through Role 5's rules:
 
 * mock bundles become "mock" artifacts, carry metric rows, and can never be published;

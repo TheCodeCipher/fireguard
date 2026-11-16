@@ -1,0 +1,173 @@
+{
+  "split_manifest_sha256": "34e2909009ad3bb7f5aefb3ad9b5c02ec1df4c776eb2c5bf02eaf68f098e6976",
+  "evaluation_config_sha256": "a01fdd6d5c56562ffde64ed2e1ca0584df623ba5beddcf945284f1b3dfd1627e",
+  "strongest_baseline_by_validation_auprc": {
+    "2018": "distance_decay",
+    "2019": "distance_decay",
+    "2020": "distance_decay",
+    "2021": "distance_decay"
+  },
+  "baseline_validation_auprc": {
+    "2018": {
+      "distance_decay": 0.26253546683767326,
+      "climatology": 0.25271411524192045
+    },
+    "2019": {
+      "distance_decay": 0.3138892759790255,
+      "climatology": 0.3045749075962963
+    },
+    "2020": {
+      "distance_decay": 0.3115286206260806,
+      "climatology": 0.3014643242774057
+    },
+    "2021": {
+      "distance_decay": 0.2711126479092769,
+      "climatology": 0.2612227922011552
+    }
+  },
+  "gate2": {
+    "decision": "BEATS",
+    "passes": true,
+    "better_folds": [
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "worse_folds": [],
+    "folds": [
+      2018,
+      2019,
+      2020,
+      2021
+    ]
+  },
+  "gate3": {
+    "m2_attention_res_unet vs m1_unet": {
+      "adds": "residual blocks + attention gates",
+      "decision": "REMOVE",
+      "folds_above_zero": [
+        2018
+      ],
+      "folds": [
+        2018,
+        2019,
+        2020,
+        2021
+      ]
+    },
+    "m3_stacked_unet vs m1_unet": {
+      "adds": "temporal context (5 days, stacked)",
+      "decision": "REMOVE",
+      "folds_above_zero": [
+        2020
+      ],
+      "folds": [
+        2018,
+        2019,
+        2020,
+        2021
+      ]
+    },
+    "m4_convlstm_unet vs m3_stacked_unet": {
+      "adds": "recurrence (ConvLSTM)",
+      "decision": "REMOVE",
+      "folds_above_zero": [
+        2018
+      ],
+      "folds": [
+        2018,
+        2019,
+        2020,
+        2021
+      ]
+    },
+    "m4_convlstm_unet vs m3_stacked_unet_base48": {
+      "adds": "recurrence at matched capacity (control)",
+      "decision": "NOT_RUN"
+    },
+    "m1_unet vs m1_no_terrain": {
+      "adds": "terrain channels (M1 with vs without)",
+      "decision": "NOT_RUN"
+    }
+  },
+  "baseline_check_by_model": {
+    "m1_unet": {
+      "decision": "BEATS",
+      "passes": true,
+      "better_folds": [
+        2018,
+        2019,
+        2020,
+        2021
+      ],
+      "worse_folds": [],
+      "folds": [
+        2018,
+        2019,
+        2020,
+        2021
+      ]
+    },
+    "m2_attention_res_unet": {
+      "decision": "BEATS",
+      "passes": true,
+      "better_folds": [
+        2018,
+        2019,
+        2020,
+        2021
+      ],
+      "worse_folds": [],
+      "folds": [
+        2018,
+        2019,
+        2020,
+        2021
+      ]
+    },
+    "m3_stacked_unet": {
+      "decision": "BEATS",
+      "passes": true,
+      "better_folds": [
+        2018,
+        2019,
+        2020,
+        2021
+      ],
+      "worse_folds": [],
+      "folds": [
+        2018,
+        2019,
+        2020,
+        2021
+      ]
+    },
+    "m4_convlstm_unet": {
+      "decision": "BEATS",
+      "passes": true,
+      "better_folds": [
+        2018,
+        2019,
+        2020,
+        2021
+      ],
+      "worse_folds": [],
+      "folds": [
+        2018,
+        2019,
+        2020,
+        2021
+      ]
+    }
+  },
+  "context_ablation_T3_vs_T5": {
+    "decision": "NOT_RUN"
+  },
+  "models_supplied": [
+    "m1_unet",
+    "m2_attention_res_unet",
+    "m3_stacked_unet",
+    "m4_convlstm_unet"
+  ]
+}

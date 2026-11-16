@@ -1,0 +1,37 @@
+{
+  "model": "m3_stacked_unet",
+  "mean_val_auprc": 0.4454593059161045,
+  "candidates_mean_val_auprc": {
+    "m1_unet": 0.42590522879193726,
+    "m2_attention_res_unet": 0.41555968462881376,
+    "m3_stacked_unet": 0.4454593059161045,
+    "m4_convlstm_unet": 0.41694928549056876
+  },
+  "rule": "highest mean validation AUPRC over the four P1 folds among M1-M4 (test split not used; ties to the smaller model)",
+  "baseline_check": {
+    "decision": "BEATS",
+    "passes": true,
+    "better_folds": [
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "worse_folds": [],
+    "folds": [
+      2018,
+      2019,
+      2020,
+      2021
+    ]
+  },
+  "test_pooled_auprc_by_fold": {
+    "2018": 0.47764537342398206,
+    "2019": 0.37534334511395695,
+    "2020": 0.4761643474434628,
+    "2021": 0.5486834951228611
+  },
+  "training_dir": "outputs/training/m3_stacked_unet",
+  "run": "m3_stacked_unet_T5_seed0",
+  "published_run_id": "m3_stacked_unet_v1"
+}

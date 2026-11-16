@@ -3,7 +3,7 @@
  * Prototype integration).
  *
  * Plain statements of what FireGuard is and is not. The project track on the Overview is not
- * typed by hand: gate states come from reports/phase3/gate_decisions.json (lib/results.ts), so
+ * typed by hand: gate states come from results/comparison/gate_decisions.json (lib/results.ts), so
  * the page changes when Role 4's comparison is re-run.
  *
  * The hero figure is REAL observation data, not a model output: VIIRS active-fire detections of
@@ -77,19 +77,19 @@ export function Overview({ go }: { go: (page: Page) => void }) {
       status: decisionText(g2),
       done: g2Done,
       fail: g2 === "FAILS",
-      text: "M1 must match or beat the strongest baseline before any temporal model is trained.",
+      text: "The reference CNN (M1) must match or beat the strongest baseline.",
     },
     {
-      title: "Gate 3: time",
+      title: "Gate 3: added modules",
       status: g3Run ? "Decided" : "Not run yet",
       done: g3Run,
-      text: "Do five days of history (M3) or a ConvLSTM (M4) add skill over M1?",
+      text: "Do attention and residual blocks (M2), five days of history (M3) or a ConvLSTM (M4) add skill?",
     },
     {
       title: "Real replays",
-      status: "After Gate 3",
+      status: "After training",
       done: false,
-      text: "The chosen model's held-out forecasts, published to the Replay lab.",
+      text: "The best model's held-out forecasts, published to the Replay lab and used for the live forecast.",
     },
   ];
 
@@ -157,19 +157,19 @@ export function Overview({ go }: { go: (page: Page) => void }) {
         <section>
           <h3>What it does not do</h3>
           <ul>
-            <li>No live forecasts, alerts or evacuation advice.</li>
+            <li>No alerts or evacuation advice: the live forecast is a research product.</li>
             <li>No fire perimeters: the target is a satellite detection, which clouds and smoke can hide.</li>
             <li>No claims outside the western-US benchmark it was tested on.</li>
           </ul>
         </section>
         <section>
-          <h3>Today's detections</h3>
+          <h3>Live</h3>
           <p>
-            The Live monitor shows current NASA FIRMS satellite detections, one satellite at a time. It is observation
-            only: FireGuard does not forecast live fires.
+            The Live page shows the daily next-day forecast of the best trained model next to current NASA FIRMS
+            satellite detections. The two are separate layers: a forecast and an observation.
           </p>
-          <button type="button" className="link" onClick={() => go("monitor")}>
-            Open the live monitor
+          <button type="button" className="link" onClick={() => go("live")}>
+            Open Live
           </button>
         </section>
       </div>
@@ -208,12 +208,16 @@ export function Methodology() {
             <td>Spatial U-Net on day D only. Same network as M3 with one day of input, so M1 vs M3 isolates the effect of history.</td>
           </tr>
           <tr>
+            <th scope="row">M2</th>
+            <td>Day D only, with residual blocks and attention gates on the skip connections. M2 vs M1 isolates the network design.</td>
+          </tr>
+          <tr>
             <th scope="row">M3</th>
             <td>U-Net with the five days stacked as channels.</td>
           </tr>
           <tr>
             <th scope="row">M4</th>
-            <td>Shared encoder with a ConvLSTM over the five days.</td>
+            <td>Shared encoder per day with ConvLSTM memory at the two coarsest scales.</td>
           </tr>
           <tr>
             <th scope="row">Baselines</th>
@@ -227,7 +231,7 @@ export function Methodology() {
         Leave-one-year-out: each year 2018 to 2021 is held out once, and fires that belong to the same fire complex
         never sit on both sides of a split (frozen manifest, SHA-256 <code>34e29090…</code>). Every replay comes from
         the model of the fold that held that fire out. Thresholds and calibration are fitted on validation fires only.
-        The headline metric is AUPRC; F1, IoU and Brier score are reported alongside, pooled and per event, with
+        The model with the best mean validation AUPRC is the one published. The headline metric is AUPRC; F1, IoU and Brier score are reported alongside, pooled and per event, with
         event-level bootstrap intervals.
       </p>
 
@@ -249,7 +253,7 @@ export function Methodology() {
         <li>
           WildfireSpreadTS v1.0 (Gerard et al., 2023), Zenodo record 8006177; loader pinned at commit <code>f62dc49</code>.
         </li>
-        <li>NASA FIRMS VIIRS active-fire detections (Suomi-NPP, NOAA-20, NOAA-21) for the Live monitor.</li>
+        <li>NASA FIRMS VIIRS active-fire detections (Suomi-NPP, NOAA-20, NOAA-21) for the Live page.</li>
         <li>Basemap: Esri World Light Gray Canvas with Esri World Hillshade; map data © Esri, HERE, Garmin, OpenStreetMap contributors.</li>
         <li>HLS S30 was audited for historical coverage only; it is not a model input.</li>
       </ul>

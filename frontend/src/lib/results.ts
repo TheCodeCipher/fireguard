@@ -3,16 +3,16 @@
  *
  * Read at BUILD time from the files Role 4's scripts write and the repository commits, so the
  * page always shows exactly what the evaluation produced and nothing is typed in by hand:
- *   reports/phase3/ablation_results.csv     pooled + event-macro metrics per fold and model
- *   reports/phase3/gate_decisions.json      Gate 2 / Gate 3 decisions (NOT_RUN until run)
+ *   results/comparison/ablation_results.csv     pooled + event-macro metrics per fold and model
+ *   results/comparison/gate_decisions.json      Gate 2 / Gate 3 decisions (NOT_RUN until run)
  *   docs/evidence/role4/baseline_results.json  test-set sizes and fire prevalence per fold
- * After `scripts/run_model_comparison.py` is run with M1, rebuild (or reload `npm run dev`) and
- * the M1 column and the Gate 2 verdict appear on their own. Models with status NOT RUN are shown
+ * After `scripts/train_all.py` has finished, rebuild (or reload `npm run dev`) and the model
+ * columns and gate verdicts appear on their own. Models with status NOT RUN are shown
  * as "not run", never as zero.
  */
-import ablationCsv from "../../../reports/phase3/ablation_results.csv?raw";
+import ablationCsv from "../../../results/comparison/ablation_results.csv?raw";
 import baselineJson from "../../../docs/evidence/role4/baseline_results.json";
-import gateJson from "../../../reports/phase3/gate_decisions.json";
+import gateJson from "../../../results/comparison/gate_decisions.json";
 
 export const FOLDS = ["2018", "2019", "2020", "2021"] as const;
 
@@ -21,10 +21,11 @@ export const MODEL_LABEL: Record<string, string> = {
   distance_decay: "Distance-decay baseline",
   climatology: "Climatology baseline",
   m1_unet: "M1 spatial U-Net",
-  m2_unet_no_terrain: "M2 U-Net without terrain",
+  m2_attention_res_unet: "M2 attention residual U-Net",
   m3_stacked_unet: "M3 stacked days, T=5",
-  m3_stacked_unet_T3: "M3 stacked days, T=3",
-  m3_stacked_unet_base40: "M3 at M4's size",
+  m1_no_terrain: "M1 without terrain (ablation)",
+  m3_stacked_unet_T3: "M3 stacked days, T=3 (ablation)",
+  m3_stacked_unet_base48: "M3 at M4's size (ablation)",
   m4_convlstm_unet: "M4 ConvLSTM, T=5",
 };
 

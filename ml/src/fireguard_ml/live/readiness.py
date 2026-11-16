@@ -4,10 +4,11 @@ Hard checks (never skippable): every fold's checkpoint and sidecars exist, load,
 mutually consistent, on the frozen split, and are byte-identical to what the OOF export recorded
 in ``runs/<run_id>/model_version.json``.
 
-Gate checks (skippable with ``allow_ungated``, which stamps the output ``UNGATED``): the backend
-registry bundle is in ``real`` mode and Gate 2 is recorded as ``BEATS`` or ``MATCHES``.
+Gate checks (``allow_ungated`` turns them into a label: the output is stamped ``UNGATED`` and the
+site shows a banner): the backend registry bundle is in ``real`` mode and the model's baseline
+check in ``results/comparison/gate_decisions.json`` is ``BEATS`` or ``MATCHES``.
 
-File names are the ones ``training/temporal_trainer.train_fold`` and
+File names are the ones ``training/trainer.train_fold`` and
 ``inference/temporal_oof.export_oof`` write; nothing is renamed or rewritten here.
 """
 
@@ -27,6 +28,8 @@ from fireguard_ml.models.checkpointing import load_checkpoint
 from fireguard_ml.training.normalization import FoldNormalizer
 
 GATE2_PASSING = ("BEATS", "MATCHES")
+REPORT_NAME = {"m1_spatial_unet": "m1_unet", "m2_attention_res_unet": "m2_attention_res_unet",
+               "m3_stacked_unet": "m3_stacked_unet", "m4_convlstm_unet": "m4_convlstm_unet"}
 SIDECARS = ("normalizer.json", "selection.json", "summary.json")
 
 
@@ -105,7 +108,7 @@ def check_live_readiness(
         raise LiveNotReadyError(
             ["--allow-mock needs 'mock' in --run-id so nobody mistakes the output"])
 
-    cfg_path = repo_root / "configs" / "temporal_unet.yaml"
+    cfg_path = repo_root / "configs" / "models.yaml"
     cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
     expected_channels = tuple(cfg["data"]["channels"])
     frozen_split = sha256_file(repo_root / cfg["data"]["split_manifest"])
@@ -114,7 +117,7 @@ def check_live_readiness(
     mv_path = artifact_root / "runs" / run_id / "model_version.json"
     model_version = _json(mv_path) if mv_path.is_file() else None
     if model_version is None:
-        hard.append(f"{mv_path} is missing (run scripts/export_temporal_oof.py for all folds)")
+        hard.append(f"{mv_path} is missing (scripts/train_all.py publishes the best model)")
     elif bool(model_version.get("is_mock")) and not allow_mock:
         hard.append(f"{mv_path}: is_mock is true (synthetic export)")
 
@@ -144,7 +147,7 @@ def check_live_readiness(
             hard.append(f"fold {fold}: preprocessing_version {meta['preprocessing_version']!r} "
                         f"!= {DATA_CONTRACT_VERSION!r}")
         if tuple(meta["channels"]) != expected_channels:
-            hard.append(f"fold {fold}: channel order differs from configs/temporal_unet.yaml")
+            hard.append(f"fold {fold}: channel order differs from configs/models.yaml")
         if meta["split_manifest_hash"] != frozen_split:
             hard.append(f"fold {fold}: trained on a different split manifest than the frozen one")
         # 3. sidecars
@@ -183,19 +186,26 @@ def check_live_readiness(
     gate: list[str] = []
     bundle_path = artifact_root / "registry" / run_id / "registry_bundle.json"
     if not bundle_path.is_file():
-        gate.append(f"{bundle_path} is missing (run scripts/build_backend_registry.py)")
+        gate.append(f"{bundle_path} is missing (run scripts/pipeline/build_backend_registry.py)")
     elif _json(bundle_path).get("mode") != "real":
         gate.append(f"{bundle_path.name}: mode is not 'real'")
-    gd_path = repo_root / "reports" / "phase3" / "gate_decisions.json"
+    gd_path = repo_root / "results" / "comparison" / "gate_decisions.json"
     if not gd_path.is_file():
-        gate.append(f"{gd_path} is missing (run scripts/run_model_comparison.py)")
+        gate.append(f"{gd_path} is missing (scripts/train_all.py writes it in step 'compare')")
     else:
         gd = _json(gd_path)
-        decision = gd.get("gate2", {}).get("decision")
+        # the selected model must match or beat the strongest soft baseline (Gate 2 rule); the
+        # comparison names models by report name, the checkpoint by architecture
+        checks = gd.get("baseline_check_by_model", {})
+        arch = type(bundles[0].model).model_type if bundles else ""
+        name = next((n for n in checks if REPORT_NAME.get(arch) == n), None)
+        decision = checks.get(name, {}).get("decision") if name else gd.get("gate2", {}).get(
+            "decision")
         if decision not in GATE2_PASSING:
-            gate.append(f"Gate 2 decision is {decision!r}, needs one of {GATE2_PASSING}")
+            gate.append(f"baseline check for {name or arch} is {decision!r}, needs one of "
+                        f"{GATE2_PASSING}")
         if gd.get("split_manifest_sha256") != bundles[0].meta["split_manifest_hash"]:
-            gate.append("Gate 2 was decided on a different split manifest")
+            gate.append("the comparison was made on a different split manifest")
     if gate and not allow_ungated:
         raise LiveNotReadyError(gate)
 

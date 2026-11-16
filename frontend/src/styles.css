@@ -695,6 +695,19 @@ table.data td.best {
   flex-direction: column;
   gap: 1rem;
 }
+/* Live page: the forecast and detection controls are two separate groups */
+.monitor-controls > section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+.monitor-controls label.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+}
 
 /* The replay really is a sequence, so the steps are numbered. */
 .step-list {

@@ -1,13 +1,13 @@
 """Active-fire band (raw band 22) from VIIRS detections, following the WSTS recipe.
 
-WSTS (``docs/data_sources_and_licenses.md`` 4.7): filter detections by date, drop
+WSTS (``docs/data/data_sources_and_licenses.md`` 4.7): filter detections by date, drop
 ``confidence == 'l'``, buffer each point by 187.5 m (half a 375 m pixel), rasterise the acquisition
 time (HHMM) with ``Reducer.last``. NaN means no detection. The raster produced here is the *raw*
 band; ``process_raw`` then applies ``floor(HHMM / 100)`` and ``> 0`` exactly as for training data
 (including the documented quirk that a 00:00-00:59 UTC detection is not in the input mask).
 
 Two points of the original Earth Engine rasterisation are not documented and are therefore
-parameters, to be fixed by ``scripts/check_live_input_parity.py`` against real WSTS frames:
+parameters, to be fixed by ``scripts/live/check_live_input_parity.py`` against real WSTS frames:
 
 * ``rule``: ``"intersects"`` marks every cell the buffered disc touches; ``"containing"`` marks
   only the cell that contains the detection.

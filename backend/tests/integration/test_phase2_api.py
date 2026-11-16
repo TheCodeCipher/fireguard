@@ -25,7 +25,7 @@ def api_client(tmp_path, monkeypatch):
 
     monkeypatch.setenv("FIREGUARD_ARTIFACT_ROOT", str(artifact_root))
     monkeypatch.setenv("FIREGUARD_APP_ENV", "development")
-    monkeypatch.delenv("FIRMS_MAP_KEY", raising=False)
+    monkeypatch.setenv("FIRMS_MAP_KEY", "")  # an env var wins over backend/.env
     get_settings.cache_clear()
 
     engine = create_engine(

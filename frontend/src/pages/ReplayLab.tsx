@@ -248,7 +248,7 @@ export function ReplayLab() {
             {events && events.length === 0 ? (
               <p className="fine">
                 No replays are registered yet. Run the offline pipeline and load its registry bundle
-                (docs/prototype/RUNBOOK.md).
+                (docs/history/old_RUNBOOK.md).
               </p>
             ) : null}
             {events && events.length > 0 ? (

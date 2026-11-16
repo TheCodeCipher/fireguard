@@ -26,7 +26,7 @@ from live_test_helpers import (  # noqa: E402
 from fireguard_ml.live.grid import LiveRegion  # noqa: E402
 from fireguard_ml.live.terrain import write_terrain_tif  # noqa: E402
 
-SCRIPT = REPO / "scripts" / "run_live_forecast.py"
+SCRIPT = REPO / "scripts" / "live" / "run_live_forecast.py"
 HEADER = ("latitude,longitude,bright_ti4,scan,track,acq_date,acq_time,satellite,instrument,"
           "confidence,version,bright_ti5,frp,daynight")
 
@@ -77,16 +77,23 @@ def _cli(tmp_path, *extra):
     return subprocess.run(cmd, capture_output=True, text=True, cwd=REPO), artifact_root
 
 
-def test_cli_refuses_when_gate2_is_not_passed(tmp_path):
-    gd = json.loads((REPO / "reports" / "phase3" / "gate_decisions.json").read_text())
-    if gd.get("gate2", {}).get("decision") in ("BEATS", "MATCHES"):
-        pytest.skip("Gate 2 has been recorded as passed in this checkout")
-    r, _ = _cli(tmp_path)
-    assert r.returncode != 0 and "NOT READY" in r.stderr and "Gate 2" in r.stderr
+def test_cli_with_require_gate_refuses_an_unvalidated_model(tmp_path):
+    gd = json.loads((REPO / "results" / "comparison" / "gate_decisions.json").read_text())
+    if gd.get("baseline_check_by_model", {}).get("m1_unet", {}).get("decision") in (
+            "BEATS", "MATCHES"):
+        pytest.skip("M1 has been recorded as passing in this checkout")
+    r, _ = _cli(tmp_path, "--require-gate")
+    assert r.returncode != 0 and "NOT READY" in r.stderr and "baseline check" in r.stderr
+
+
+def test_cli_labels_an_unvalidated_model_by_default(tmp_path):
+    r, _ = _cli(tmp_path, "--dry-run")
+    assert r.returncode == 0, r.stderr
+    assert json.loads(r.stdout[r.stdout.index("{"):])["gate_status"] == "UNGATED"
 
 
 def test_cli_dry_run_writes_nothing(tmp_path):
-    r, artifact_root = _cli(tmp_path, "--allow-ungated", "--dry-run")
+    r, artifact_root = _cli(tmp_path, "--dry-run")
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout[r.stdout.index("{"):])
     assert out["dry_run"] is True and out["gate_status"] == "UNGATED"
@@ -99,7 +106,7 @@ def test_cli_dry_run_writes_nothing(tmp_path):
 
 def test_cli_full_run_publishes_one_region(tmp_path):
     backend = tmp_path / "backend_artifacts"
-    r, artifact_root = _cli(tmp_path, "--allow-ungated", "--backend-artifact-root", str(backend))
+    r, artifact_root = _cli(tmp_path, "--backend-artifact-root", str(backend))
     assert r.returncode == 0, r.stderr
     assert "UNGATED" in r.stdout
     index = json.loads((backend / "live" / "index.json").read_text())
@@ -109,7 +116,10 @@ def test_cli_full_run_publishes_one_region(tmp_path):
     assert reg["nan_fraction"]["viirs_m11"] == 1.0 and reg["nan_fraction"]["slope"] == 0.0
     assert (reg["height"], reg["width"]) == wsts_region().hw
     info = json.loads((artifact_root / "live" / index["live_run_id"] / "live_run.json").read_text())
-    assert info["threshold_fold_mean"] == pytest.approx(0.4)
+    # published maps are calibrated by default, so the raw 0.4 threshold is moved by each fold's
+    # Platt calibrator (monotone) onto the same scale
+    assert info["calibrated"] is True and 0 < info["threshold_fold_mean"] < 1
+    assert info["threshold_fold_mean"] != pytest.approx(0.4)
     assert info["summary"]["detections_fetched"] == 25
 
 
@@ -117,6 +127,14 @@ def test_cli_refuses_an_origin_that_is_not_a_completed_day(tmp_path):
     run_dir, run, artifact_root = make_trained_run(tmp_path, (2020, 2021))
     r = subprocess.run([sys.executable, str(SCRIPT), "--run-dir", str(run_dir), "--run", run,
                         "--run-id", RUN_ID, "--artifact-root", str(artifact_root),
-                        "--origin-date", "2999-01-01", "--allow-ungated"],
+                        "--origin-date", "2999-01-01"],
                        capture_output=True, text=True, cwd=REPO)
     assert r.returncode != 0 and "not a completed UTC day" in r.stderr
+
+
+def test_cli_raw_keeps_the_validation_threshold(tmp_path):
+    r, artifact_root = _cli(tmp_path, "--raw", "--no-publish")
+    assert r.returncode == 0, r.stderr
+    (run,) = (artifact_root / "live").glob("live_*")
+    info = json.loads((run / "live_run.json").read_text())
+    assert info["calibrated"] is False and info["threshold_fold_mean"] == pytest.approx(0.4)

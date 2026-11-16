@@ -71,7 +71,7 @@ def test_no_model_side_module_mentions_observability():
 
 
 def test_observability_file_lives_outside_the_input_manifests(repo_root):
-    script = repo_root / "scripts" / "run_observability_diagnostic.py"
+    script = repo_root / "scripts" / "checks" / "run_observability_diagnostic.py"
     if not script.exists():
         pytest.skip("diagnostic script not on this branch")
     text = script.read_text(encoding="utf-8")

@@ -29,7 +29,7 @@ anomalies. Two evidence-based steps make it the event's own fire:
   distances jump beyond 40 km. If no cluster is that close, the nearest cluster is kept.
 
 This module is pure Python + NumPy/SciPy and does no file I/O, so it can be unit-tested on
-synthetic events. Raw footprints are produced by ``scripts/derive_event_footprints.py``.
+synthetic events. Raw footprints are produced by ``scripts/data/derive_event_footprints.py``.
 """
 
 from __future__ import annotations

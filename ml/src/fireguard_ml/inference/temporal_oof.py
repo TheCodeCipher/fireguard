@@ -39,7 +39,7 @@ from fireguard_ml.training.temporal_data import (
     pad_samples,
     scored_keys,
 )
-from fireguard_ml.training.temporal_trainer import ProtocolFiles, TemporalRunConfig, score_split
+from fireguard_ml.training.trainer import ProtocolFiles, TemporalRunConfig, score_split
 
 PRE_REVEAL_FIELDS = (
     "event_id",
@@ -129,8 +129,14 @@ def export_oof(
     run_id: str,
     device: str = "cpu",
     events: set[str] | None = None,
+    write_rasters: bool = True,
+    log=None,
 ) -> dict:
     """Export OOF forecasts for every fold in ``folds`` ({fold: checkpoint path}).
+
+    ``write_rasters=False`` writes only the scores (``model_version.json`` and ``post_reveal/``):
+    enough for the model comparison and the report, without one GeoTIFF per test sample. The
+    replay site needs the rasters, so the selected best model is exported with them.
 
     ``events`` (PROTOTYPE): export only these test events, for a quick preview. Role 4's
     validation then reports coverage < 1, so the registry marks the run mock.
@@ -172,7 +178,10 @@ def export_oof(
             test_events = [e for e in test_events if e in events]
         keys = [k for k in scored_keys(protocol.eval_samples, test_events) if k in available]
         group_of = {ev: assert_held_out(ev, fold, rows) for ev in {k[0] for k in keys}}
-        for k in keys:
+        if log:
+            log(f"  fold {fold}: {len(keys)} test samples"
+                f"{' (writing GeoTIFFs)' if write_rasters else ''}")
+        for k in (keys if write_rasters else []):
             s = source.load(k)
             b = pad_samples([replace(s, x=norm.apply(s.x, s.valid))], 2**model.depth)
             prob = model.predict(b.x.to(dev), orig_hw=s.hw)[0, 0].cpu().numpy()
@@ -232,9 +241,10 @@ def export_oof(
             )
     if len(config_hashes) != 1:
         raise OOFMappingError(f"folds were trained with different configs: {config_hashes}")
-    with (out / "oof_forecasts.jsonl").open("w", encoding="utf-8") as f:
-        for r in records:
-            f.write(json.dumps(r) + "\n")
+    if write_rasters:
+        with (out / "oof_forecasts.jsonl").open("w", encoding="utf-8") as f:
+            for r in records:
+                f.write(json.dumps(r) + "\n")
     (out / "model_version.json").write_text(
         json.dumps(
             {

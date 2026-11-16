@@ -3,7 +3,7 @@
 Training data used VNP09GA Collection 1 (``NOAA/VIIRS/001/VNP09GA``), stored as scaled integers
 (reflectance x 10,000). That collection is decommissioned; current data is Collection 2, stored in
 reflectance units. A provider must return values **on the Collection 1 scale**; a per-band linear
-map (``LinearReflectanceMapping``, fitted by ``scripts/check_live_input_parity.py`` from input
+map (``LinearReflectanceMapping``, fitted by ``scripts/live/check_live_input_parity.py`` from input
 pixels only) absorbs the remaining calibration difference.
 
 A missing observation is NaN. The fold normaliser turns NaN into the fold's training mean, exactly

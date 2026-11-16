@@ -2,7 +2,7 @@
 
 STATUS: written against the documented ``ee.data.computePixels`` API but NOT executed in the
 environment this code was built in (no Earth Engine credentials there). The first real run must
-be ``scripts/check_live_input_parity.py``, which compares what these providers return with real
+be ``scripts/live/check_live_input_parity.py``, which compares what these providers return with real
 WSTS frames; do not trust live forecasts before that check passes.
 
 Why ``computePixels`` on the region's own grid: WSTS was exported from Earth Engine at 375 m in
@@ -103,17 +103,24 @@ class EarthEngineVNP09GA:
     ``collection="v1"`` reads the decommissioned collection WSTS used (historical checks only).
     ``collection="v2"`` reads the current collection, multiplies by 10,000 and applies ``mapping``.
     ``day_offset`` shifts which collection day is taken for a frame day (0 = same UTC date).
+    ``max_age_days``: VNP09GA reaches Earth Engine a few days late, so the most recent frames of a
+    live forecast often have no image yet. Then the newest earlier day within ``max_age_days``
+    is used (never a later one, so no future data). Reflectance changes slowly outside the burn
+    scar; the age actually used is recorded in ``last_source`` and in the forecast's provenance.
+    0 disables the fallback (the frame is then all-NaN, as a fully cloudy training day is).
     """
 
     def __init__(self, collection: str = "v2", mapping: LinearReflectanceMapping | None = None,
-                 day_offset: int = 0) -> None:
+                 day_offset: int = 0, max_age_days: int = 0) -> None:
         if collection not in ("v1", "v2"):
             raise ValueError("collection must be 'v1' or 'v2'")
         self.collection = collection
         self.mapping = mapping
         self.day_offset = int(day_offset)
+        self.max_age_days = int(max_age_days)
         mapped = "" if mapping is None or collection == "v1" else f"+map[{mapping.fitted_on}]"
         self.name = f"earth_engine_vnp09ga_{collection}{mapped}"
+        self.last_source = self.name
 
     def fetch(self, region: LiveRegion, day: date) -> np.ndarray:
         try:
@@ -122,11 +129,17 @@ class EarthEngineVNP09GA:
             raise ReflectanceUnavailable(str(exc)) from exc
         d0 = day + timedelta(days=self.day_offset)
         cid = VNP09GA_V1 if self.collection == "v1" else VNP09GA_V2
-        col = (ee.ImageCollection(cid)
-               .filterDate(d0.isoformat(), (d0 + timedelta(days=1)).isoformat())
-               .select(list(VNP09GA_BANDS)))
-        if int(col.size().getInfo()) == 0:
-            raise ReflectanceUnavailable(f"{cid}: no image for {d0}")
+        for age in range(self.max_age_days + 1):
+            d = d0 - timedelta(days=age)
+            col = (ee.ImageCollection(cid)
+                   .filterDate(d.isoformat(), (d + timedelta(days=1)).isoformat())
+                   .select(list(VNP09GA_BANDS)))
+            if int(col.size().getInfo()) > 0:
+                break
+        else:
+            raise ReflectanceUnavailable(
+                f"{cid}: no image for {d0} or the {self.max_age_days} days before")
+        self.last_source = self.name if age == 0 else f"{self.name}@{age}d_old"
         arr = compute_pixels(col.median(), region, VNP09GA_BANDS)
         if self.collection == "v2":
             arr = arr * np.float32(V2_TO_V1_SCALE)

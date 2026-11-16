@@ -1,4 +1,4 @@
-"""Read ``docs/leakage_audit.csv`` and enforce it on model channel lists.
+"""Read ``docs/data/leakage_audit.csv`` and enforce it on model channel lists.
 
 The register is the single source of truth for which channels may enter the strict models
 (Plan v4 4.2). Every training or inference entry point should call ``assert_strict_channels``
@@ -100,5 +100,5 @@ def assert_strict_channels(channel_names: list[str], register: dict[str, Channel
     if bad:
         raise ValueError(
             f"channels not allowed in a strict model: {bad}. Allowed: {sorted(allowed)}. "
-            "Change docs/leakage_audit.csv (with evidence) first, never this call."
+            "Change docs/data/leakage_audit.csv (with evidence) first, never this call."
         )

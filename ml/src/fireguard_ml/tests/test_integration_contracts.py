@@ -52,10 +52,11 @@ def test_role2_channel_schema_is_role1_loader_schema():
 
 def test_strict_channel_list_is_identical_in_every_role():
     """Roles 1-4: one strict list, in loader order, everywhere it is written down."""
-    register = strict_channels(load_register(ROOT / "docs" / "leakage_audit.csv"))  # Role 4
+    # Role 4's register
+    register = strict_channels(load_register(ROOT / "docs" / "data" / "leakage_audit.csv"))
     role1 = [c["name"] for c in _yaml(CONFIGS / "data" / "strict_input_v1.yaml")["channels"]]
     role2 = _yaml(CONFIGS / "unet.yaml")["channel_schema"]["selected_names"]
-    role3 = _yaml(CONFIGS / "temporal_unet.yaml")["data"]["channels"]
+    role3 = _yaml(CONFIGS / "models.yaml")["data"]["channels"]
     # The register is unordered (a set of decisions); the configs fix the loader order.
     assert sorted(register) == sorted(role1)
     assert role1 == role2 == role3
@@ -65,7 +66,7 @@ def test_strict_channel_list_is_identical_in_every_role():
 
 def test_strict_list_excludes_every_gated_source():
     """Roles 3+4: GFS, GRIDMET, PDSI, NDVI/EVI2, land cover and fire time stay out."""
-    strict = _yaml(CONFIGS / "temporal_unet.yaml")["data"]["channels"]
+    strict = _yaml(CONFIGS / "models.yaml")["data"]["channels"]
     banned = ("gfs", "precip", "wind", "temperature", "humidity", "energy_release",
               "palmer", "ndvi", "evi2", "land_cover", "active_fire_time")  # fmt: skip
     assert not [c for c in strict if any(b in c for b in banned)]
@@ -89,7 +90,7 @@ def test_every_config_cites_the_current_frozen_split():
     assert recorded == actual
     assert _yaml(CONFIGS / "unet.yaml")["data"]["split_manifest_sha256"] == actual
     # Role 3's config does not duplicate the hash; it points at the hash file it re-verifies.
-    t = _yaml(CONFIGS / "temporal_unet.yaml")["data"]
+    t = _yaml(CONFIGS / "models.yaml")["data"]
     assert t["split_hashes"] == "data/manifests/p1_split_hashes.txt"
 
 

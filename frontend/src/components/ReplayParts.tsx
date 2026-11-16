@@ -38,7 +38,7 @@ export function RasterCanvas({
 
 /**
  * Banner shown on every mock replay. PROTOTYPE: worded for all three mock causes the bridge
- * (scripts/build_backend_registry.py) can record - synthetic pixels, a plumbing/smoke training
+ * (scripts/pipeline/build_backend_registry.py) can record - synthetic pixels, a plumbing/smoke training
  * budget, or a run covering only part of a fold or only some of the four test years.
  */
 export function MockBanner() {

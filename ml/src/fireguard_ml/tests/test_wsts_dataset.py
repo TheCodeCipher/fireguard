@@ -124,10 +124,10 @@ def test_processed_schema_matches_the_pinned_loader_layout():
 
 def test_strict_indices_agree_with_the_leakage_register(repo_root):
     pol = pytest.importorskip("fireguard_ml.data.channel_policy")
-    reg = pol.load_register(repo_root / "docs" / "leakage_audit.csv")
+    reg = pol.load_register(repo_root / "docs" / "data" / "leakage_audit.csv")
     strict = tuple(pol.strict_channels(reg))
     assert strict == STRICT
-    with (repo_root / "docs" / "leakage_audit.csv").open(encoding="utf-8-sig") as f:
+    with (repo_root / "docs" / "data" / "leakage_audit.csv").open(encoding="utf-8-sig") as f:
         rows = {r["channel_name"]: r for r in csv.DictReader(f)}
     for name, idx in zip(strict, channel_indices(strict), strict=True):
         assert int(rows[name]["processed_channel_index"]) == idx
@@ -137,7 +137,7 @@ def test_strict_indices_agree_with_the_leakage_register(repo_root):
 @pytest.mark.parametrize("bad", EXCLUDED + ("land_cover_water",))
 def test_every_excluded_channel_is_refused_by_the_register(repo_root, bad):
     pol = pytest.importorskip("fireguard_ml.data.channel_policy")
-    reg = pol.load_register(repo_root / "docs" / "leakage_audit.csv")
+    reg = pol.load_register(repo_root / "docs" / "data" / "leakage_audit.csv")
     with pytest.raises(ValueError):
         pol.assert_strict_channels([*STRICT, bad], reg)
 
@@ -157,7 +157,7 @@ def test_active_fire_time_and_binary_mask_follow_the_loader():
 def test_hhmm_floor_quirk_is_reproduced_and_recorded():
     """A detection at 00:00-00:59 UTC becomes hour 0 and is LOST from the binary input mask
     (loader computes the mask after floor-division), but it IS a positive target. Reproduced on
-    purpose for parity with the pinned loader; documented in docs/data_dictionary.md 12."""
+    purpose for parity with the pinned loader; documented in docs/data/data_dictionary.md 12."""
     raw = np.zeros((23, 1, 1), np.float32)
     raw[ACTIVE_FIRE_BAND] = 30.0
     assert process_raw(raw)[39, 0, 0] == 0.0 and target_from_band(raw[22])[0, 0] == 1

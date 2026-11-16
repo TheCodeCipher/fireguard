@@ -1,9 +1,11 @@
 """Paired model comparisons, Gate 2 and Gate 3 decisions (Role 4, P3-R4-02/03).
 
-Inputs are per-event test-score files in the contract format (``docs/metrics_contract.md`` 7):
+Inputs are per-event test-score files in the contract format
+(``docs/evaluation/metrics_contract.md`` 7):
 ``fold_test_year, event_id, group_id, baseline, auprc, brier, f1, iou, n_pos, n_valid`` where the
 ``baseline`` column names the model. Baselines and models share the format, so one engine compares
-everything. Rules are fixed in ``docs/model_comparison_protocol.md`` before any model result.
+everything. Rules are fixed in ``docs/evaluation/model_comparison_protocol.md`` before any model
+result.
 """
 
 from __future__ import annotations
@@ -22,11 +24,14 @@ from fireguard_ml.evaluation.bootstrap import paired_group_bootstrap
 METRICS = ("auprc", "brier", "f1", "iou", "n_pos", "n_valid")
 # Gate 3 comparisons fixed in advance: (candidate, reference, what the candidate adds)
 GATE3_PAIRS = (
+    ("m2_attention_res_unet", "m1_unet", "residual blocks + attention gates"),
     ("m3_stacked_unet", "m1_unet", "temporal context (5 days, stacked)"),
     ("m4_convlstm_unet", "m3_stacked_unet", "recurrence (ConvLSTM)"),
-    ("m4_convlstm_unet", "m3_stacked_unet_base40", "recurrence at matched capacity (control)"),
-    ("m1_unet", "m2_unet_no_terrain", "terrain channels (M1 with vs M2 without)"),
+    ("m4_convlstm_unet", "m3_stacked_unet_base48", "recurrence at matched capacity (control)"),
+    ("m1_unet", "m1_no_terrain", "terrain channels (M1 with vs without)"),
 )
+MAIN_MODELS = ("m1_unet", "m2_attention_res_unet", "m3_stacked_unet", "m4_convlstm_unet")
+ABLATION_MODELS = ("m1_no_terrain", "m3_stacked_unet_T3", "m3_stacked_unet_base48")
 # Sequence-length ablation: not an added module. The shorter context is preferred if it is not
 # WORSE on any fold (cheaper at equal skill); otherwise T=5 stays.
 CONTEXT_ABLATION = ("m3_stacked_unet_T3", "m3_stacked_unet", "context 3 days vs 5 days")

@@ -1,0 +1,17 @@
+model,fold,run,best_epoch,epochs_run,stopped_early,val_auprc,val_threshold,parameters,minutes,device,batch_size,grad_accum,precision
+m1_unet,2018,m1_spatial_unet_T1_seed0,26,33,True,0.36769981906263016,0.003273487091064453,8355297,91.8,NVIDIA GeForce RTX 3060 Laptop GPU,8,2,bfloat16
+m1_unet,2019,m1_spatial_unet_T1_seed0,25,32,True,0.46824780563296575,0.14511537551879883,8355297,125.6,NVIDIA GeForce RTX 3060 Laptop GPU,8,2,bfloat16
+m1_unet,2020,m1_spatial_unet_T1_seed0,23,30,True,0.448628360746522,0.024053096771240234,8355297,106.3,NVIDIA GeForce RTX 3060 Laptop GPU,8,2,bfloat16
+m1_unet,2021,m1_spatial_unet_T1_seed0,27,34,True,0.4190449297256312,0.04468107223510742,8355297,130.8,NVIDIA GeForce RTX 3060 Laptop GPU,8,2,bfloat16
+m2_attention_res_unet,2018,m2_attention_res_unet_T1_seed0,12,19,True,0.3765830988253617,0.005219936370849609,8860534,148.1,NVIDIA GeForce RTX 3060 Laptop GPU,8,2,bfloat16
+m2_attention_res_unet,2019,m2_attention_res_unet_T1_seed0,19,26,True,0.4674517773864894,0.06465387344360352,8860534,560.5,NVIDIA GeForce RTX 3060 Laptop GPU,4,4,bfloat16
+m2_attention_res_unet,2020,m2_attention_res_unet_T1_seed0,36,40,False,0.42742233615281616,0.2821965217590332,8860534,167.9,NVIDIA GeForce RTX 3060 Laptop GPU,4,4,bfloat16
+m2_attention_res_unet,2021,m2_attention_res_unet_T1_seed0,8,15,True,0.39078152615058775,0.05582284927368164,8860534,70.5,NVIDIA GeForce RTX 3060 Laptop GPU,4,4,bfloat16
+m3_stacked_unet,2018,m3_stacked_unet_T5_seed0,17,24,True,0.3636412559563922,0.006003856658935547,8363361,169.0,Tesla T4,16,1,float16
+m3_stacked_unet,2019,m3_stacked_unet_T5_seed0,25,32,True,0.4889504128901958,0.05480241775512695,8363361,309.4,Tesla T4,16,1,float16
+m3_stacked_unet,2020,m3_stacked_unet_T5_seed0,20,27,True,0.4829974486735311,0.06766939163208008,8363361,207.0,Tesla T4,16,1,float16
+m3_stacked_unet,2021,m3_stacked_unet_T5_seed0,24,31,True,0.4462481061442988,0.4343409538269043,8363361,179.9,Tesla T4,16,1,float16
+m4_convlstm_unet,2018,m4_convlstm_unet_T5_seed0,13,20,True,0.35624725218862424,0.006930828094482422,17794529,147.6,Tesla T4,8,2,float16
+m4_convlstm_unet,2019,m4_convlstm_unet_T5_seed0,8,15,True,0.4580027721648162,0.07396364212036133,17794529,154.6,Tesla T4,8,2,float16
+m4_convlstm_unet,2020,m4_convlstm_unet_T5_seed0,20,27,True,0.44835513711563035,0.1351180076599121,17794529,219.6,Tesla T4,8,2,float16
+m4_convlstm_unet,2021,m4_convlstm_unet_T5_seed0,9,16,True,0.4051919804932042,0.09636545181274414,17794529,150.9,Tesla T4,8,2,float16
