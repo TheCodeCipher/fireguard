@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from fireguard.models.forecast import ForecastRun
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import JSON, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from fireguard.core.database import Base
+
+if TYPE_CHECKING:
+    from fireguard.models.forecast import ForecastRun
 
 
 class ModelVersion(Base):

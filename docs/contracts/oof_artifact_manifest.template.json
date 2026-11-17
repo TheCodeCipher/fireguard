@@ -1,0 +1,84 @@
+{
+  "manifest_version": "1.0",
+  "mode": "real",
+  "event_key": "REPLACE_WITH_REGISTERED_EVENT_KEY",
+  "protocol_id": "P1_LOYO",
+  "fold_id": "REPLACE_WITH_FROZEN_FOLD_ID",
+  "origin_date": "YYYY-MM-DD",
+  "target_date": "YYYY-MM-DD",
+  "held_out_group_id": "REPLACE_WITH_FROZEN_COMPLEX_GROUP_ID",
+  "split_manifest_sha256": "REPLACE_WITH_64_HEX_SHA256",
+  "input_manifest_sha256": "REPLACE_WITH_64_HEX_SHA256",
+  "data_schema_version": "REPLACE_WITH_APPROVED_SCHEMA_VERSION",
+  "data_schema_sha256": "REPLACE_WITH_64_HEX_SHA256",
+  "channel_manifest_sha256": "REPLACE_WITH_64_HEX_SHA256",
+  "checkpoint_sha256": "REPLACE_WITH_64_HEX_SHA256",
+  "config_hash": "REPLACE_WITH_64_HEX_SHA256",
+  "time_safety_status": "PASS_LEVEL_A",
+  "artifacts": [
+    {
+      "artifact_type": "probability_map",
+      "storage_uri": "p1_loyo/MODEL_VERSION/FOLD_ID/EVENT_KEY/ORIGIN_DATE/probability.tif",
+      "content_type": "image/tiff",
+      "checksum_sha256": "REPLACE_WITH_64_HEX_SHA256",
+      "reveal_class": "pre_reveal",
+      "metadata": {
+        "format": "GeoTIFF",
+        "crs": "REPLACE_WITH_VERIFIED_CRS",
+        "affine_transform": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "width": 1,
+        "height": 1,
+        "nodata": null,
+        "valid_extent": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "units": "probability"
+      }
+    },
+    {
+      "artifact_type": "actual_target",
+      "storage_uri": "restricted/p1_loyo/MODEL_VERSION/FOLD_ID/EVENT_KEY/ORIGIN_DATE/actual_target.tif",
+      "content_type": "image/tiff",
+      "checksum_sha256": "REPLACE_WITH_64_HEX_SHA256",
+      "reveal_class": "post_reveal",
+      "metadata": {
+        "format": "GeoTIFF",
+        "crs": "REPLACE_WITH_VERIFIED_CRS",
+        "affine_transform": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "width": 1,
+        "height": 1,
+        "nodata": null,
+        "valid_extent": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "units": "binary_active_fire_detection"
+      }
+    }
+  ],
+  "model_name": "REPLACE_WITH_MODEL_NAME",
+  "model_version": "REPLACE_WITH_MODEL_VERSION",
+  "architecture": "REPLACE_WITH_ARCHITECTURE",
+  "split_name": "test",
+  "is_oof": true,
+  "horizon_hours": 24
+}

@@ -1,0 +1,16 @@
+# Phase gate log (Role 4 evidence; the team lead records the decisions)
+
+| Date | Gate | Evidence | Status | Decided by |
+|---|---|---|---|---|
+| 2026-11-13 | G1-D: P1 manifests frozen | `p1_split_hashes.txt` `status=FROZEN`, footprint rule v2, manifest sha256 `34e2909009ad3bb7...`; 0 unreadable TIFFs; `validate_manifest` passes; first frozen hash withdrawn (over-grouping, `fire_complex_groups.md` 3a) | READY FOR LEAD SIGN-OFF | (lead) |
+| 2026-11-13 | G1-B: leakage register | `docs/data/leakage_audit.csv`; strict list of 7 channels; GRIDMET pending EE check 5 (Role 3) | READY FOR LEAD SIGN-OFF | (lead) |
+| 2026-11-13 | Baselines on frozen P1 | `docs/evaluation/baseline_results.md`; decay beats climatology on all 4 folds (paired group bootstrap) | DONE | Role 4 |
+| 2026-11-13 | Comparison protocol locked | `docs/evaluation/model_comparison_protocol.md` (strongest baseline by validation AUPRC; Gate 2 BEATS/MATCHES/FAILS; Gate 3 >= 2 folds) | LOCKED, needs lead sign-off of the two operationalisations | (lead) |
+| - | Gate 2: M1 vs strongest baseline | needs Role 2's per-event file + `model_version.json` | NOT RUN | - |
+| - | Gate 3: M3, M4, terrain | needs M1-M4 runs | NOT RUN | - |
+| - | Explanation layer | not implemented or validated | UNAVAILABLE (do not display) | Role 4 |
+| - | Uncertainty layer | none exists; outputs are single probabilities | UNAVAILABLE | Role 4 |
+| 2026-11-13 | Integration branch `integration/prototype` | all role branches merged + Role 1/4 overlays + Role 2 folded into `ml/` + Role 6 frontend; ML 265 passed (1 skip), backend 61, frontend 15; `docs/history/INTEGRATION_LOG.md` | READY FOR LEAD REVIEW (PR) | (lead) |
+| 2026-11-13 | Gate 4: replay end to end | mechanics demonstrated on SYNTHETIC data and mock artifacts: forecast-first, reveal lock, no pre-reveal leaks, metrics after reveal (`docs/evidence/integration/prototype_demo_run.json`); no real OOF artifact exists | CONDITIONAL (real artifacts after Gate 3) | (lead) |
+| 2026-11-14 | Model ladder and training revised before the full training run | M2 redefined (attention residual U-Net; plan v4's terrain + land-cover M2 is impossible under the strict contract); terrain question moved to the `m1_no_terrain` ablation; M4 ConvLSTM at the two coarsest levels; size-matched control M3 base 48; training changed to shuffled full frames, flips with aspect handled, warm-up + cosine learning rate, patience 6, effective batch 16, resumable checkpoints; all four models train in sequence and Gate 2 is evaluated after training (M3/M4 no longer wait for it). Only the M1 fold-2018 run from 2026-11-13 existed; it is superseded and not reported. Rules: `docs/evaluation/model_comparison_protocol.md` section 6 | NEEDS LEAD SIGN-OFF | (lead) |
+

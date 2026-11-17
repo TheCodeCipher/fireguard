@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from fireguard.models.model_version import ModelVersion
     from fireguard.models.replay import ReplayMetric, ReplaySession
 
+
 class ForecastRun(Base):
     """A precomputed run. Only explicitly marked OOF held-out runs are replayable."""
 
@@ -78,7 +79,9 @@ class ForecastArtifact(Base):
     storage_uri: Mapped[str] = mapped_column(String(1000), nullable=False)
     checksum_sha256: Mapped[str | None] = mapped_column(String(64))
     content_type: Mapped[str | None] = mapped_column(String(100))
-    status: Mapped[str] = mapped_column(String(30), default="available", nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(30), default="generated", server_default="generated", nullable=False
+    )
     metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
