@@ -1,11 +1,12 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import exists, func, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.orm import Session
 
+from fireguard.core.config import get_settings
 from fireguard.core.database import get_db
-from fireguard.models import ForecastRun, WildfireEvent
+from fireguard.models import ForecastArtifact, ForecastRun, WildfireEvent
 from fireguard.schemas.events import WSTSEventItem, WSTSEventListResponse
 
 router = APIRouter(prefix="/wsts", tags=["WSTS Event Catalogue"])
@@ -19,11 +20,28 @@ def list_wsts_events(
     limit: Annotated[int, Query(ge=1, le=500)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> WSTSEventListResponse:
+    artifact_visibility = ForecastArtifact.status == "published"
+    if get_settings().app_env.lower() == "development":
+        artifact_visibility = or_(
+            ForecastArtifact.status == "published",
+            and_(
+                ForecastArtifact.status == "mock",
+                ForecastArtifact.metadata_json["mode"].as_string() == "mock",
+            ),
+        )
+    replay_artifact_exists = exists(
+        select(ForecastArtifact.id).where(
+            ForecastArtifact.forecast_run_id == ForecastRun.id,
+            ForecastArtifact.artifact_type == "probability_map",
+            artifact_visibility,
+        )
+    )
     replay_exists = exists(
         select(ForecastRun.id).where(
             ForecastRun.event_id == WildfireEvent.id,
             ForecastRun.is_oof.is_(True),
             ForecastRun.split_name.in_(["test", "held_out"]),
+            replay_artifact_exists,
         )
     )
     statement = select(WildfireEvent, replay_exists.label("has_replay"))

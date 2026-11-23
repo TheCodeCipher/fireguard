@@ -1,0 +1,65 @@
+{
+  "kind": "SYNTHETIC_SPATIAL_EFFICIENCY_PROBE_NOT_M1_RESULT",
+  "python": "3.11.9",
+  "pytorch": "2.15.0+cpu",
+  "os": "Windows-10-10.0.26200-SP0",
+  "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+  "system_ram_bytes": 16890978304,
+  "process_peak_working_set_bytes": 321593344,
+  "device": "cpu",
+  "cuda_available": false,
+  "gpu_name": null,
+  "peak_gpu_memory_bytes": null,
+  "batch_size": 1,
+  "channels": 8,
+  "channel_schema_status": "SYNTHETIC_ONLY_NOT_ROLE4_APPROVED",
+  "base_channels": 4,
+  "parameter_count": 30721,
+  "synthetic_checkpoint_size_bytes": 141437,
+  "seed": 2026,
+  "warmup_steps": 1,
+  "measured_steps": 5,
+  "full_frame_cases": [
+    {
+      "original_hw": [
+        304,
+        247
+      ],
+      "padded_hw": [
+        320,
+        256
+      ],
+      "output_hw_after_unpad": [
+        304,
+        247
+      ],
+      "valid_pixels": 75088,
+      "mean_inference_seconds": 0.02474752003327012,
+      "median_inference_seconds": 0.023801300209015608,
+      "frames_per_second_batch1": 40.4080893219045
+    },
+    {
+      "original_hw": [
+        305,
+        207
+      ],
+      "padded_hw": [
+        320,
+        224
+      ],
+      "output_hw_after_unpad": [
+        305,
+        207
+      ],
+      "valid_pixels": 63135,
+      "mean_inference_seconds": 0.021305200085043906,
+      "median_inference_seconds": 0.022120800334960222,
+      "frames_per_second_batch1": 46.93689784692483
+    }
+  ],
+  "limitations": [
+    "Synthetic inputs and an untrained U-Net only; no WSTS performance or accuracy claim.",
+    "Does not satisfy the representative real-data/Gate 1 benchmark requirement.",
+    "No training, split evaluation, or Phase 2 scale-up was performed."
+  ]
+}

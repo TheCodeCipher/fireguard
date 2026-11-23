@@ -1,4 +1,4 @@
-"""Masked evaluation metrics for FireGuard (contract: ``docs/metrics_contract.md``).
+"""Masked evaluation metrics for FireGuard (contract: ``docs/evaluation/metrics_contract.md``).
 
 Every metric takes a ``valid_mask``; cells where it is False (padding, invalid data) are dropped
 before anything is computed. All metrics are defined at natural prevalence on full frames.

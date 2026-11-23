@@ -1,4 +1,4 @@
-"""Schema tests for docs/leakage_audit.csv. CI fails if a malformed row is introduced."""
+"""Schema tests for docs/data/leakage_audit.csv. CI fails if a malformed row is introduced."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ EXPECTED_CHANNELS = 24  # 23 raw WSTS channels (land cover as one row) + derived
 
 @pytest.fixture(scope="module")
 def register_path(repo_root):
-    return repo_root / "docs" / "leakage_audit.csv"
+    return repo_root / "docs" / "data" / "leakage_audit.csv"
 
 
 def test_header_matches_the_contract_exactly(register_path):
