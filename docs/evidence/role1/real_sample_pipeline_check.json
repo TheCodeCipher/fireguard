@@ -1,0 +1,82 @@
+{
+  "note": "pipeline check on 3 real events; NOT a result, model untrained",
+  "events": [
+    "fire_21458798",
+    "fire_24461930",
+    "fire_24461965"
+  ],
+  "samples": 24,
+  "frame_hw": [
+    [
+      304,
+      247
+    ],
+    [
+      306,
+      212
+    ],
+    [
+      306,
+      214
+    ]
+  ],
+  "load_seconds_per_sample_uncached_cpu": 0.337,
+  "nan_fraction_per_channel": {
+    "viirs_m11": 0.00015,
+    "viirs_i2": 0.0,
+    "viirs_i1": 0.0,
+    "slope": 0.0,
+    "aspect": 0.0,
+    "elevation": 0.0,
+    "binary_active_fire_mask": 0.0
+  },
+  "target_positive_cells": 7925,
+  "models": {
+    "m3_stacked_unet": {
+      "input": [
+        1,
+        5,
+        7,
+        320,
+        256
+      ],
+      "logits": [
+        1,
+        1,
+        320,
+        256
+      ],
+      "predict": [
+        1,
+        1,
+        304,
+        247
+      ],
+      "loss_finite": true,
+      "grads_finite": true
+    },
+    "m4_convlstm_unet": {
+      "input": [
+        1,
+        5,
+        7,
+        320,
+        256
+      ],
+      "logits": [
+        1,
+        1,
+        320,
+        256
+      ],
+      "predict": [
+        1,
+        1,
+        304,
+        247
+      ],
+      "loss_finite": true,
+      "grads_finite": true
+    }
+  }
+}

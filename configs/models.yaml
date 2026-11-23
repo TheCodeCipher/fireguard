@@ -1,0 +1,97 @@
+# FireGuard models M1-M4: inputs, architecture and training settings.
+# Read by scripts/train_all.py (and every script that needs the channel list).
+# What each model is and why: ml/src/fireguard_ml/models/architectures.py (module docstring).
+#
+# STRICT configuration: the five GFS forecast channels are excluded and must never be listed.
+# tests/test_temporal_models.py and tests/test_temporal_pipeline.py enforce this.
+
+schema_version: 2
+strict: true
+
+data:
+  # Context length for the temporal models (plan v4 4.1). T=3 is the predeclared ablation.
+  n_leading_observations: 5
+  frame_order: oldest_to_newest
+  # Role 4's leakage register is the source of truth; this list must equal its strict channels
+  # in loader order (test_temporal_pipeline enforces it).
+  strict_channel_manifest: docs/data/leakage_audit.csv
+  channels:
+    - viirs_m11
+    - viirs_i2
+    - viirs_i1
+    - slope
+    - aspect
+    - elevation
+    - binary_active_fire_mask
+  # Loader (processed) indices that are always dropped: the five GFS channels.
+  excluded_processed_indices: [33, 34, 35, 36, 37]
+  pad_multiple: 32            # must equal 2 ** depth
+  # Role 4's frozen P1 (leave-one-year-out) manifest; re-hashed on every run.
+  split_manifest: data/manifests/p1_loyo_fold_manifest.csv
+  split_hashes: data/manifests/p1_split_hashes.txt
+  eval_samples: data/manifests/wsts_eval_samples.csv
+  preprocessing_version: wsts_strict_input_v1
+
+# The four models, trained in this order by scripts/train_all.py.
+models:
+  m1:
+    model_type: m1_spatial_unet          # day D only; reference CNN
+    report_name: m1_unet
+    T: 1
+    base: 32
+    depth: 5
+  m2:
+    model_type: m2_attention_res_unet    # day D only; residual blocks + attention-gated skips
+    report_name: m2_attention_res_unet
+    T: 1
+    base: 32
+    depth: 5
+  m3:
+    model_type: m3_stacked_unet          # T days stacked on the channel axis
+    report_name: m3_stacked_unet
+    T: 5
+    base: 32
+    depth: 5
+  m4:
+    model_type: m4_convlstm_unet         # shared encoder per day + ConvLSTM memory
+    report_name: m4_convlstm_unet
+    T: 5
+    base: 32
+    depth: 5
+    lstm_kernel: 3
+
+# Optional runs (scripts/train_all.py --ablations). Predeclared before any result exists.
+ablations:
+  m1_no_terrain:                         # does terrain help? (Gate 3 pair M1 vs this)
+    model: m1
+    report_name: m1_no_terrain
+    drop_channels: [slope, aspect, elevation]
+  m3_T3:                                 # 3 days of context instead of 5
+    model: m3
+    report_name: m3_stacked_unet_T3
+    T: 3
+  m3_size_matched:                       # M3 widened to M4's size: recurrence vs capacity
+    model: m3
+    report_name: m3_stacked_unet_base48
+    base: 48                             # 18.8 M parameters vs M4's 17.8 M (7 channels, T=5)
+
+training:
+  enabled: true               # all four models train in sequence; gates are evaluated after
+  optimizer: adamw
+  lr: 1.0e-3                  # peak learning rate, reached after warm-up
+  min_lr: 1.0e-5              # cosine decay floor
+  warmup_epochs: 1
+  weight_decay: 1.0e-4        # not applied to norm layers and biases
+  dropout: 0.1                # spatial dropout at the bottleneck
+  max_epochs: 40
+  patience: 6                 # epochs without a validation-AUPRC gain of at least min_delta
+  min_delta: 1.0e-4
+  effective_batch: 16         # samples per optimizer step on every machine (batch x accumulation)
+  grad_clip: 1.0
+  augment_flips: true         # horizontal/vertical flips with aspect handled (training/trainer.py)
+  amp: true                   # bfloat16/float16 autocast where the GPU supports it
+  bce_weight: 1.0
+  dice_weight: 1.0
+  loss: bce_dice_masked       # valid-pixel mask applied
+  checkpoint_selection: val_auprc_full_frame    # natural prevalence, un-cropped frames
+  seed: 0

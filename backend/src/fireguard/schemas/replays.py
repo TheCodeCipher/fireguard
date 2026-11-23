@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ReplayOriginItem(BaseModel):
@@ -13,6 +13,8 @@ class ReplayOriginItem(BaseModel):
     model_version: str
     split_name: str
     is_oof: bool
+    registry_status: str = "published"
+    is_mock: bool = False
 
 
 class ReplayOriginListResponse(BaseModel):
@@ -42,6 +44,7 @@ class ArtifactDescriptor(BaseModel):
     content_type: str | None = None
     url: str
     checksum_sha256: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ReplayForecastResponse(BaseModel):
@@ -54,6 +57,7 @@ class ReplayForecastResponse(BaseModel):
     config_hash: str | None = None
     channel_manifest_sha256: str | None = None
     time_safety_status: str
+    provenance: dict[str, Any] = Field(default_factory=dict)
     artifacts: list[ArtifactDescriptor]
 
 

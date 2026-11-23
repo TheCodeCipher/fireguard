@@ -1,0 +1,4 @@
+# Extra package for live forecasting (fireguard_ml.live, scripts/live/). It does not touch
+# torch or numpy, so it is safe to install into the training environment:
+#   python -m pip install -r ml/requirements-live.txt
+earthengine-api>=1.1

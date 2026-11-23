@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from fireguard.models.forecast import ForecastRun
 from datetime import date
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from fireguard.core.database import Base
+
+if TYPE_CHECKING:
+    from fireguard.models.forecast import ForecastRun
 
 
 class WildfireEvent(Base):

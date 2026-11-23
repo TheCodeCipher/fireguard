@@ -1,0 +1,133 @@
+{
+  "kind": "SHORT_REAL_SAMPLE_COMPUTE_PROBE_NOT_M1_TRAINING_OR_EVALUATION",
+  "timestamp_utc": "2026-11-13T09:18:38.929730+00:00",
+  "sample": {
+    "event_id": "fire_21458798",
+    "input_date": "2018-01-06",
+    "target_date": "2018-01-07",
+    "input_shape_source": [
+      1,
+      40,
+      288,
+      224
+    ],
+    "target_shape_source": [
+      288,
+      224
+    ],
+    "target_positive_pixels": 10,
+    "source_aware_masks_supplied": false,
+    "validity_status": "PROVISIONAL_FINITE_ONLY",
+    "input_valid_pixels": 64512,
+    "target_valid_pixels": 64512,
+    "loss_valid_pixels": 64512,
+    "export_frame_is_full_original_frame": false
+  },
+  "model": {
+    "selected_channels": [
+      "viirs_m11",
+      "viirs_i2",
+      "viirs_i1",
+      "ndvi",
+      "evi2",
+      "total_precipitation",
+      "wind_speed",
+      "wind_direction",
+      "minimum_temperature",
+      "maximum_temperature",
+      "energy_release_component",
+      "specific_humidity",
+      "slope",
+      "aspect",
+      "elevation",
+      "pdsi",
+      "landcover_evergreen_needleleaf",
+      "landcover_evergreen_broadleaf",
+      "landcover_deciduous_needleleaf",
+      "landcover_deciduous_broadleaf",
+      "landcover_mixed_forest",
+      "landcover_closed_shrubland",
+      "landcover_open_shrubland",
+      "landcover_woody_savanna",
+      "landcover_savanna",
+      "landcover_grassland",
+      "landcover_permanent_wetland",
+      "landcover_cropland",
+      "landcover_urban",
+      "landcover_cropland_natural_vegetation_mosaic",
+      "landcover_snow_ice",
+      "landcover_barren",
+      "landcover_water",
+      "forecast_total_precipitation",
+      "forecast_wind_speed",
+      "forecast_wind_direction",
+      "forecast_temperature",
+      "forecast_specific_humidity",
+      "active_fire_detection_time",
+      "active_fire_binary"
+    ],
+    "channel_selection_status": "EXPLORATORY_NOT_STRICT_APPROVED",
+    "channel_schema_sha256": "6f107de8a8b98d670f405351bbc14e90e509476247cd051a210ad9e6b7e1e6e2",
+    "strict_approved": false,
+    "approval_reference": null,
+    "input_shape_after_adapter": [
+      1,
+      40,
+      288,
+      224
+    ],
+    "padded_hw": [
+      288,
+      224
+    ],
+    "logits_shape": [
+      1,
+      1,
+      288,
+      224
+    ],
+    "restored_logits_shape": [
+      1,
+      1,
+      288,
+      224
+    ],
+    "base_channels": 4,
+    "parameter_count": 31873
+  },
+  "timing_seconds": {
+    "export_load": 0.062051800079643726,
+    "adapt_and_pad": 0.04457389982417226,
+    "mean_forward_loss_backward_optimizer_step": 0.0865429600700736,
+    "median_forward_loss_backward_optimizer_step": 0.08618259988725185,
+    "steps_per_second": 11.554954893965988
+  },
+  "compute": {
+    "python": "3.11.9",
+    "pytorch": "2.15.0+cpu",
+    "os": "Windows-10-10.0.26200-SP0",
+    "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "system_ram_bytes": 16890978304,
+    "process_peak_working_set_bytes": 360861696,
+    "device": "cpu",
+    "cuda_available": false,
+    "gpu_name": null,
+    "gpu_total_memory_bytes": null,
+    "peak_gpu_memory_bytes": null,
+    "batch_size": 1,
+    "warmup_steps": 1,
+    "measured_steps": 5,
+    "seed": 2026,
+    "deterministic_algorithms_requested": true
+  },
+  "loss": 1.638291835784912,
+  "config_sha256": "df951a79183afa96222194c0b6f9b9e2e3325ca1f853cd2577ae49557662c486",
+  "split_manifest_path": "data/manifests/p1_loyo_fold_manifest.csv",
+  "split_manifest_sha256": "55a3ca18c0c981e8f1671b78e2d23b23a6e30fe84a929100dddcd5f9b39e90d5",
+  "limitations": [
+    "One sample and a short optimizer-step probe are compute/interface evidence only, not a trained baseline or predictive-quality result.",
+    "When source masks are absent, the finite-only mask is provisional and must not be used for official real-data training/evaluation.",
+    "The export is 288x224; Role 1's notes report a 304x247 raster center-crop. This export cannot restore discarded borders, so full-frame agreement is pending.",
+    "All 40 channels remain exploratory until the config carries Role 4's reviewed strict subset and approval reference."
+  ]
+}

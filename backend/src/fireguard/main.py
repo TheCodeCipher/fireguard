@@ -3,9 +3,10 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from fireguard.api.routes import events, firms, health, replays
+from fireguard.api.routes import events, firms, health, live, replays
 from fireguard.core.config import get_settings
 from fireguard.core.errors import APIError
 
@@ -67,15 +68,21 @@ app.include_router(firms.router, prefix=settings.api_v1_prefix)
 app.include_router(events.router, prefix=settings.api_v1_prefix)
 app.include_router(replays.router, prefix=settings.api_v1_prefix)
 app.include_router(replays.artifacts_router, prefix=settings.api_v1_prefix)
+app.include_router(live.router, prefix=settings.api_v1_prefix)
 
 
-@app.get("/", tags=["Root"])
-async def root() -> dict:
-    return {
-        "message": "Welcome to the FireGuard API",
-        "docs": "/docs",
-        "health": f"{settings.api_v1_prefix}/health",
-        "firms_observations_mock": f"{settings.api_v1_prefix}/firms/observations",
-        "fires": f"{settings.api_v1_prefix}/fires",
-        "events": f"{settings.api_v1_prefix}/wsts/events",
-    }
+if settings.frontend_dist is not None and (settings.frontend_dist / "index.html").is_file():
+    # Mounted last, so /api/v1/..., /docs and /redoc keep priority over the site's files.
+    app.mount("/", StaticFiles(directory=settings.frontend_dist, html=True), name="frontend")
+else:
+
+    @app.get("/", tags=["Root"])
+    async def root() -> dict:
+        return {
+            "message": "Welcome to the FireGuard API",
+            "docs": "/docs",
+            "health": f"{settings.api_v1_prefix}/health",
+            "firms_observations_mock": f"{settings.api_v1_prefix}/firms/observations",
+            "fires": f"{settings.api_v1_prefix}/fires",
+            "events": f"{settings.api_v1_prefix}/wsts/events",
+        }

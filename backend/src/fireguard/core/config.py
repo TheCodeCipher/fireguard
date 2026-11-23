@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     replay_session_ttl_seconds: int = Field(default=900, ge=60, le=86400)
     event_catalogue_page_limit: int = Field(default=500, ge=1, le=5000)
     cors_origins: list[str] = ["http://localhost:5173"]
+    # Built website (frontend/dist). When set, the API also serves the site at "/", so the whole
+    # app runs as one process on one port (scripts/app/start_app.py sets it). Unset: API only.
+    frontend_dist: Path | None = None
 
 
 @lru_cache
